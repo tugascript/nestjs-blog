@@ -1,0 +1,72 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Message {
+  id: ID!
+  message: String!
+}
+
+type PageInfo {
+  endCursor: String!
+  hasNextPage: Boolean!
+}
+
+type User {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  name: String!
+  username: String!
+  email: String
+  picture: String
+  onlineStatus: OnlineStatus!
+  lastOnline: String!
+}
+
+enum OnlineStatus {
+  ONLINE
+  BUSY
+  IDLE
+  DO_NOT_DISTURB
+  INVISIBLE
+  OFFLINE
+}
+
+type UserTypePageEdge {
+  cursor: String!
+  node: User!
+}
+
+type PaginatedUsers {
+  totalCount: Int!
+  edges: [UserTypePageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type Query {
+  me: User!
+  getUser(username: String!): User!
+  findUsers(after: String, first: Int = 10, search: String, cursor: UsersCursor = DATE, order: QueryOrder = DESC): PaginatedUsers!
+}
+
+enum UsersCursor {
+  DATE
+  ALPHABET
+}
+
+enum QueryOrder {
+  ASC
+  DESC
+  asc
+  desc
+}
+
+type Mutation {
+  updateProfilePicture(picture: Upload!): User!
+  updateOnlineStatus(defaultStatus: OnlineStatus!): Message!
+  deleteAccount(password: String!): Message!
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
