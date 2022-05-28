@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 
 @ArgsType()
-export class PaginationDto {
+export abstract class PaginationDto {
   @Field(() => String, { nullable: true })
   @IsString()
   @IsBase64()

@@ -42,8 +42,6 @@ export class UsersService {
   private readonly wsNamespace = this.configService.get<string>('WS_UUID');
   private readonly wsAccessTime =
     this.configService.get<number>('jwt.wsAccess.time');
-  private readonly cookieName =
-    this.configService.get<string>('REFRESH_COOKIE');
 
   //____________________ MUTATIONS ____________________
 

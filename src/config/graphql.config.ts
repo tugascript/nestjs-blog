@@ -17,13 +17,13 @@ import { IWsParams } from './interfaces/ws-params.interface';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
+  private readonly testing = this.configService.get<boolean>('testing');
+  private readonly redisOpt = this.configService.get<RedisOptions>('redis');
+
   constructor(
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
   ) {}
-
-  private readonly testing = this.configService.get<boolean>('testing');
-  private readonly redisOpt = this.configService.get<RedisOptions>('redis');
 
   public createGqlOptions(): MercuriusExtendedDriverConfig {
     const plugins: MercuriusDriverPlugin[] = [
@@ -79,9 +79,10 @@ export class GqlConfigService implements GqlOptionsFactory {
           if (authArr[0] !== 'Bearer') return false;
 
           try {
-            const [userId, sessionId] =
-              await this.authService.generateWsSession(authArr[1]);
-            return { ws: { userId, sessionId } };
+            const [user, sessionId] = await this.authService.generateWsSession(
+              authArr[1],
+            );
+            return { ws: { id: user.id, role: user.role, sessionId } };
           } catch (_) {
             return false;
           }

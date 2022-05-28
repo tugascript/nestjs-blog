@@ -16,6 +16,11 @@ import { validationSchema } from './config/validation';
 import { EmailModule } from './email/email.module';
 import { UploaderModule } from './uploader/uploader.module';
 import { UsersModule } from './users/users.module';
+import { PostsModule } from './posts/posts.module';
+import { CommentsModule } from './comments/comments.module';
+import { SeriesModule } from './series/series.module';
+import { TagsModule } from './tags/tags.module';
+import { LoadersModule } from './loaders/loaders.module';
 
 @Module({
   imports: [
@@ -43,6 +48,11 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     EmailModule,
     UploaderModule,
+    PostsModule,
+    CommentsModule,
+    SeriesModule,
+    TagsModule,
+    LoadersModule,
   ],
   providers: [
     {

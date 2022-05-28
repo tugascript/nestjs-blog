@@ -21,6 +21,7 @@ import { NAME_REGEX, SLUG_REGEX } from '../../common/constants/regex';
 import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { CredentialsEmbeddable } from '../embeddables/credentials.embeddable';
 import { OnlineStatusEnum } from '../enums/online-status.enum';
+import { RoleEnum } from '../enums/role.enum';
 import { IUser } from '../interfaces/user.interface';
 
 @Entity({ tableName: 'users' })
@@ -63,6 +64,14 @@ export class UserEntity extends LocalBaseEntity implements IUser {
   @Property()
   @IsString()
   public password!: string;
+
+  @Enum({
+    items: () => RoleEnum,
+    default: RoleEnum.USER,
+    columnType: 'varchar(9)',
+  })
+  @IsEnum(RoleEnum)
+  public role: RoleEnum = RoleEnum.USER;
 
   @Enum({
     items: () => OnlineStatusEnum,

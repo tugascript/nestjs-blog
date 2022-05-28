@@ -48,8 +48,11 @@ export class AuthGuard implements CanActivate {
     if (arr[0] !== 'Bearer') return isPublic;
 
     try {
-      const { id } = await this.authService.verifyAuthToken(arr[1], 'access');
-      req.user = id;
+      const { id, role } = await this.authService.verifyAuthToken(
+        arr[1],
+        'access',
+      );
+      req.user = { id, role };
       return true;
     } catch (_) {
       return isPublic;

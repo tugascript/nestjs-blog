@@ -1,10 +1,10 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { CacheModule, CACHE_MANAGER } from '@nestjs/common';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { compare, hash } from 'bcrypt';
 import { Cache } from 'cache-manager';
-import { v5, v4 } from 'uuid';
+import { v4, v5 } from 'uuid';
 import { CommonModule } from '../../common/common.module';
 import { CommonService } from '../../common/common.service';
 import { LocalMessageType } from '../../common/gql-types/message.type';
@@ -29,6 +29,7 @@ import {
 import { faker } from '@faker-js/faker';
 import { ISessionsData } from '../interfaces/sessions-data.interface';
 import dayjs from 'dayjs';
+import { RoleEnum } from '../../users/enums/role.enum';
 
 class ResponseMock {
   public cookies = '';
@@ -156,10 +157,13 @@ describe('AuthService', () => {
       jest
         .spyOn(authService, 'registerUser')
         .mockImplementationOnce(async (input) => {
-          const { id, credentials } = await usersService.createUser(input);
+          const { id, credentials, role } = await usersService.createUser(
+            input,
+          );
           confirmationToken = await generateAuthToken(
             {
               id,
+              role,
               count: credentials.version,
             },
             'confirmation',
@@ -290,7 +294,7 @@ describe('AuthService', () => {
 
           if (user) {
             resetToken = await generateAuthToken(
-              { id: user.id, count: user.credentials.version },
+              { id: user.id, count: user.credentials.version, role: user.role },
               'resetPassword',
             );
             return new LocalMessageType(resetToken);
@@ -407,7 +411,10 @@ describe('AuthService', () => {
           authService.generateWsSession('asdasd'),
         ).rejects.toThrowError();
 
-        const token = await generateAuthToken({ id: userId }, 'access');
+        const token = await generateAuthToken(
+          { id: userId, role: RoleEnum.USER },
+          'access',
+        );
         const [id, sessionId] = await authService.generateWsSession(token);
 
         expect(id).toBe(userId);
@@ -450,16 +457,23 @@ describe('AuthService', () => {
               }),
             );
 
-            return [id, sessionId];
+            return [user, sessionId];
           });
 
-        const token = await generateAuthToken({ id: userId }, 'access');
-        const [id, sessionId] = await authService.generateWsSession(token);
+        const token = await generateAuthToken(
+          { id: userId, role: RoleEnum.USER },
+          'access',
+        );
+        const [user, sessionId] = await authService.generateWsSession(token);
 
-        expect(id).toBe(userId);
+        expect(user.id).toBe(userId);
         expect(sessionId).toBeDefined();
         expect(
-          await authService.refreshUserSession({ userId, sessionId }),
+          await authService.refreshUserSession({
+            id: user.id,
+            role: user.role,
+            sessionId,
+          }),
         ).toBe(true);
 
         await authService.updateEmail(response as any, userId, {
@@ -470,14 +484,21 @@ describe('AuthService', () => {
         setTimeout(
           async () =>
             expect(
-              await authService.refreshUserSession({ userId, sessionId }),
+              await authService.refreshUserSession({
+                id: user.id,
+                role: user.role,
+                sessionId,
+              }),
             ).toBe(false),
           150,
         );
       });
 
       it('closeUserSession', async () => {
-        const token = await generateAuthToken({ id: userId }, 'access');
+        const token = await generateAuthToken(
+          { id: userId, role: RoleEnum.USER },
+          'access',
+        );
         const [id, sessionId] = await authService.generateWsSession(token);
         expect(id).toBe(userId);
         expect(sessionId).toBeDefined();
@@ -486,7 +507,11 @@ describe('AuthService', () => {
         expect(id2).toBe(userId);
         expect(sessionId2).toBeDefined();
 
-        await authService.closeUserSession({ userId, sessionId });
+        await authService.closeUserSession({
+          id: userId,
+          role: RoleEnum.USER,
+          sessionId,
+        });
         const userUuid = v5(
           userId.toString(),
           configService.get<string>('WS_UUID'),
@@ -494,7 +519,11 @@ describe('AuthService', () => {
 
         expect(await cacheManager.get(userUuid)).toBeDefined();
 
-        await authService.closeUserSession({ userId, sessionId: sessionId2 });
+        await authService.closeUserSession({
+          id: userId,
+          role: RoleEnum.USER,
+          sessionId: sessionId2,
+        });
         expect(await cacheManager.get(userUuid)).toBeUndefined();
       });
     });
