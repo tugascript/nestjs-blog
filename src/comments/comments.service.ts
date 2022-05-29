@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCommentInput } from './dto/create-comment.input';
-import { UpdateCommentInput } from './dto/update-comment.input';
+import { CreateCommentInput } from './inputs/create-comment.input';
+import { ReplyInput } from './inputs/reply.input';
 
 @Injectable()
 export class CommentsService {
@@ -16,7 +16,7 @@ export class CommentsService {
     return `This action returns a #${id} comment`;
   }
 
-  update(id: number, updateCommentInput: UpdateCommentInput) {
+  update(id: number, updateCommentInput: ReplyInput) {
     return `This action updates a #${id} comment`;
   }
 

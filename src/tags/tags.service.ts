@@ -26,7 +26,10 @@ export class TagsService {
       throw new BadRequestException('Each user can only have 50 tags');
     }
 
-    const tag = this.tagsRepository.create({ name, author: userId });
+    const tag = this.tagsRepository.create({
+      name: this.commonService.formatTitle(name),
+      author: userId,
+    });
     await this.commonService.saveEntity(this.tagsRepository, tag, true);
     return tag;
   }
@@ -41,7 +44,7 @@ export class TagsService {
     { tagId, name }: UpdateTagDto,
   ): Promise<TagEntity> {
     const tag = await this.tagById(userId, tagId);
-    tag.name = name;
+    tag.name = this.commonService.formatTitle(name);
     await this.commonService.saveEntity(this.tagsRepository, tag);
     return tag;
   }

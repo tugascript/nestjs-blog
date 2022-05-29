@@ -15,6 +15,8 @@ import { SlugDto } from '../common/dtos/slug.dto';
 import { PaginatedSeriesType } from './gql-types/paginated-series.type';
 import { SearchDto } from '../common/dtos/search.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
+import { SeriesTagInput } from './inputs/series-tag.input';
+import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -36,6 +38,33 @@ export class SeriesResolver {
     @Args('input') input: UpdateSeriesInput,
   ): Promise<SeriesEntity> {
     return this.seriesService.updateSeries(user.id, input);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Mutation(() => SeriesType)
+  public async updateSeriesPicture(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: UpdateSeriesPictureInput,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.updateSeriesPicture(user.id, input);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Mutation(() => SeriesType)
+  public async addTagToSeries(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: SeriesTagInput,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.addTagToSeries(user.id, input);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Mutation(() => SeriesType)
+  public async removeTagFromSeries(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: SeriesTagInput,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.removeTagFromSeries(user.id, input);
   }
 
   @UseGuards(PublisherGuard)

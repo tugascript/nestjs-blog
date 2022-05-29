@@ -24,9 +24,16 @@ import { OnlineStatusDto } from './dtos/online-status.dto';
 import { ProfilePictureDto } from './dtos/profile-picture.dto';
 import { UserEntity } from './entities/user.entity';
 import { getUserCursor } from './enums/users-cursor.enum';
+import { RatioEnum } from '../common/enums/ratio.enum';
 
 @Injectable()
 export class UsersService {
+  private readonly likeOperator =
+    this.configService.get<tLikeOperator>('likeOperator');
+  private readonly wsNamespace = this.configService.get<string>('WS_UUID');
+  private readonly wsAccessTime =
+    this.configService.get<number>('jwt.wsAccess.time');
+
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: EntityRepository<UserEntity>,
@@ -36,12 +43,6 @@ export class UsersService {
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
   ) {}
-
-  private readonly likeOperator =
-    this.configService.get<tLikeOperator>('likeOperator');
-  private readonly wsNamespace = this.configService.get<string>('WS_UUID');
-  private readonly wsAccessTime =
-    this.configService.get<number>('jwt.wsAccess.time');
 
   //____________________ MUTATIONS ____________________
 
@@ -96,7 +97,11 @@ export class UsersService {
     const user = await this.getUserById(userId);
     const toDelete = user.picture;
 
-    user.picture = await this.uploaderService.uploadImage(userId, picture, 1);
+    user.picture = await this.uploaderService.uploadImage(
+      userId,
+      picture,
+      RatioEnum.SQUARE,
+    );
 
     if (toDelete) await this.uploaderService.deleteFile(toDelete);
 
@@ -287,5 +292,14 @@ export class UsersService {
       this.usersRepository.flush(),
       'Email already exists',
     );
+  }
+
+  /**
+   * Get User Ref
+   *
+   * Gets a reference of a user entity by a given ID.
+   */
+  public getUserRef(userId: number): UserEntity {
+    return this.usersRepository.getReference(userId);
   }
 }

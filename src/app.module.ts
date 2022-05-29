@@ -21,6 +21,7 @@ import { CommentsModule } from './comments/comments.module';
 import { SeriesModule } from './series/series.module';
 import { TagsModule } from './tags/tags.module';
 import { LoadersModule } from './loaders/loaders.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { LoadersModule } from './loaders/loaders.module';
     SeriesModule,
     TagsModule,
     LoadersModule,
+    NotificationsModule,
   ],
   providers: [
     {

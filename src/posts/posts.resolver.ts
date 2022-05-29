@@ -1,35 +1,125 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Args, Mutation, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { PostsService } from './posts.service';
-import { Post } from './entities/post.entity';
-import { CreatePostInput } from './dto/create-post.input';
-import { UpdatePostInput } from './dto/update-post.input';
+import { UseGuards } from '@nestjs/common';
+import { PublisherGuard } from '../auth/guards/publisher.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
+import { LocalMessageType } from '../common/gql-types/message.type';
+import { Public } from '../auth/decorators/public.decorator';
+import { SlugDto } from '../common/dtos/slug.dto';
+import { IPaginated } from '../common/interfaces/paginated.interface';
+import { PostType } from './gql-types/post.type';
+import { CreatePostInput } from './inputs/create-post.input';
+import { UpdatePostInput } from './inputs/update-post.input';
+import { PostEntity } from './entities/post.entity';
+import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
+import { PostTagInput } from './inputs/post-tag.input';
+import { PostDto } from './dtos/post.dto';
+import { PaginatedPostsType } from './gql-types/paginated-posts.type';
+import { SearchPostsDto } from './dtos/search-posts.dto';
+import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
+import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 
-@Resolver(() => Post)
+@Resolver(() => PostType)
 export class PostsResolver {
   constructor(private readonly postsService: PostsService) {}
 
-  @Mutation(() => Post)
-  createPost(@Args('createPostInput') createPostInput: CreatePostInput) {
-    return this.postsService.create(createPostInput);
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async createPost(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: CreatePostInput,
+  ): Promise<PostEntity> {
+    return this.postsService.createPost(user.id, input);
   }
 
-  @Query(() => [Post], { name: 'posts' })
-  findAll() {
-    return this.postsService.findAll();
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async updatePost(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: UpdatePostInput,
+  ): Promise<PostEntity> {
+    return this.postsService.updatePost(user.id, input);
   }
 
-  @Query(() => Post, { name: 'post' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.postsService.findOne(id);
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async updatePostPicture(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: UpdatePostPictureInput,
+  ): Promise<PostEntity> {
+    return this.postsService.updatePostPicture(user.id, input);
   }
 
-  @Mutation(() => Post)
-  updatePost(@Args('updatePostInput') updatePostInput: UpdatePostInput) {
-    return this.postsService.update(updatePostInput.id, updatePostInput);
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async addTagToPost(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: PostTagInput,
+  ): Promise<PostEntity> {
+    return this.postsService.addTagToPost(user.id, input);
   }
 
-  @Mutation(() => Post)
-  removePost(@Args('id', { type: () => Int }) id: number) {
-    return this.postsService.remove(id);
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async removeTagFromPost(
+    @CurrentUser() user: IAccessPayload,
+    @Args('input') input: PostTagInput,
+  ): Promise<PostEntity> {
+    return this.postsService.removeTagFromPost(user.id, input);
+  }
+
+  @Mutation(() => PostType)
+  public async likePost(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: PostDto,
+  ): Promise<PostEntity> {
+    return this.postsService.likePost(user.id, dto.postId);
+  }
+
+  @Mutation(() => PostType)
+  public async unlikePost(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: PostDto,
+  ): Promise<PostEntity> {
+    return this.postsService.unlikePost(user.id, dto.postId);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Mutation(() => LocalMessageType)
+  public async deletePost(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: PostDto,
+  ): Promise<LocalMessageType> {
+    return this.postsService.deletePost(user.id, dto.postId);
+  }
+
+  @Public()
+  @Query(() => PostType)
+  public async postById(@Args() dto: PostDto): Promise<PostEntity> {
+    return this.postsService.postById(dto.postId);
+  }
+
+  @Public()
+  @Query(() => PostType)
+  public async postBySlug(@Args() dto: SlugDto): Promise<PostEntity> {
+    return this.postsService.postBySlug(dto.slug);
+  }
+
+  @Public()
+  @Query(() => PaginatedPostsType)
+  public async filterPost(
+    @Args() dto: SearchPostsDto,
+  ): Promise<IPaginated<PostEntity>> {
+    return this.postsService.filterPosts(dto);
+  }
+
+  /**
+   * Logic Inside Loaders
+   */
+  @ResolveField('likes', () => PaginatedUsersType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getLikes(@Args() _: FilterRelationDto) {
+    return;
   }
 }

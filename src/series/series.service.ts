@@ -39,6 +39,7 @@ export class SeriesService {
     userId: number,
     { title, picture, tagIds }: CreateSeriesInput,
   ) {
+    title = this.commonService.formatTitle(title);
     const series = await this.seriesRepository.create({
       title,
       slug: this.commonService.generateSlug(title),
@@ -65,6 +66,7 @@ export class SeriesService {
     { seriesId, title }: UpdateSeriesInput,
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
+    title = this.commonService.formatTitle(title);
     series.title = title;
     series.slug = this.commonService.generateSlug(title);
     await this.commonService.saveEntity(this.seriesRepository, series);
@@ -186,7 +188,7 @@ export class SeriesService {
       });
     }
 
-    return await this.commonService.queryBuilderPagination(
+    return this.commonService.queryBuilderPagination(
       this.seriesAlias,
       getQueryCursor(cursor),
       first,
