@@ -14,6 +14,7 @@ import { MercuriusDriverPlugin } from './interfaces/mercurius-driver-plugin.inte
 import { MercuriusExtendedDriverConfig } from './interfaces/mercurius-extended-driver-config.interface';
 import { IWsCtx } from './interfaces/ws-ctx.interface';
 import { IWsParams } from './interfaces/ws-params.interface';
+import { LoadersService } from '../loaders/loaders.service';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -23,6 +24,7 @@ export class GqlConfigService implements GqlOptionsFactory {
   constructor(
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
+    private readonly loadersService: LoadersService,
   ) {}
 
   public createGqlOptions(): MercuriusExtendedDriverConfig {
@@ -105,6 +107,13 @@ export class GqlConfigService implements GqlOptionsFactory {
             data: null,
           },
         };
+      },
+      loaders: {
+        Series: {
+          author: this.loadersService.seriesAuthorLoader(),
+          tags: this.loadersService.seriesTagsLoader(),
+          posts: this.loadersService.seriesPostsLoader(),
+        },
       },
       plugins,
     };

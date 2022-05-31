@@ -1,12 +1,9 @@
-import { IBase } from '../../common/interfaces/base.interface';
 import { Collection } from '@mikro-orm/core';
 import { ITag } from '../../tags/interfaces/tag.interface';
-import { IUser } from '../../users/interfaces/user.interface';
+import { IExtendedBase } from '../../common/interfaces/extended-base.interface';
 
-export interface ISeries extends IBase {
-  title: string;
-  slug: string;
-  picture: string;
+export interface ISeries extends IExtendedBase {
   tags: Collection<any, any> | ITag[];
-  author?: IUser;
+  followersCount?: number;
+  followers?: Collection<any, any>;
 }

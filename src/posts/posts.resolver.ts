@@ -1,4 +1,11 @@
-import { Args, Mutation, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { PostsService } from './posts.service';
 import { UseGuards } from '@nestjs/common';
 import { PublisherGuard } from '../auth/guards/publisher.guard';
@@ -19,6 +26,8 @@ import { PaginatedPostsType } from './gql-types/paginated-posts.type';
 import { SearchPostsDto } from './dtos/search-posts.dto';
 import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
+import { PubSub } from 'mercurius';
+import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -71,18 +80,20 @@ export class PostsResolver {
 
   @Mutation(() => PostType)
   public async likePost(
+    @Context('pubsub') pubsub: PubSub,
     @CurrentUser() user: IAccessPayload,
     @Args() dto: PostDto,
   ): Promise<PostEntity> {
-    return this.postsService.likePost(user.id, dto.postId);
+    return this.postsService.likePost(pubsub, user.id, dto.postId);
   }
 
   @Mutation(() => PostType)
   public async unlikePost(
+    @Context('pubsub') pubsub: PubSub,
     @CurrentUser() user: IAccessPayload,
     @Args() dto: PostDto,
   ): Promise<PostEntity> {
-    return this.postsService.unlikePost(user.id, dto.postId);
+    return this.postsService.unlikePost(pubsub, user.id, dto.postId);
   }
 
   @UseGuards(PublisherGuard)
@@ -112,6 +123,14 @@ export class PostsResolver {
     @Args() dto: SearchPostsDto,
   ): Promise<IPaginated<PostEntity>> {
     return this.postsService.filterPosts(dto);
+  }
+
+  @Public()
+  @Query(() => PaginatedPostsType)
+  public async filterSeriesPosts(
+    @Args() dto: FilterSeriesPostDto,
+  ): Promise<IPaginated<PostEntity>> {
+    return this.postsService.filterSeriesPosts(dto);
   }
 
   /**

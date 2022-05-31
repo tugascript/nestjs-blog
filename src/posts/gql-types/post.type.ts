@@ -1,7 +1,5 @@
 import { IPost } from '../interfaces/post.interface';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { TagType } from '../../tags/gql-types/tag.type';
-import { UserType } from '../../users/gql-types/user.type';
 import { ExtendedBaseType } from '../../common/gql-types/extended-base.type';
 import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
@@ -16,12 +14,6 @@ export class PostType extends ExtendedBaseType implements IPost {
 
   @Field(() => Boolean)
   public published: boolean;
-
-  @Field(() => [TagType])
-  public tags: TagType[];
-
-  @Field(() => UserType)
-  public author: UserType;
 
   @Field(() => PaginatedUsersType)
   public likes: IPaginated<IUser>;

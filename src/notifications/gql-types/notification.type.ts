@@ -1,18 +1,15 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { LocalBaseType } from '../../common/gql-types/base.type';
-import { IAppNotification } from '../interfaces/app-notification.interface';
-import { AppNotificationTypeEnum } from '../enums/app-notification-type.enum';
+import { INotification } from '../interfaces/notification.interface';
+import { NotificationTypeEnum } from '../enums/notification-type.enum';
 import { PostType } from '../../posts/gql-types/post.type';
 import { CommentType } from '../../comments/gql-types/comment.type';
 import { UserType } from '../../users/gql-types/user.type';
 
 @ObjectType('AppNotification')
-export class AppNotificationType
-  extends LocalBaseType
-  implements IAppNotification
-{
-  @Field(() => AppNotificationTypeEnum)
-  public notificationType: AppNotificationTypeEnum;
+export class NotificationType extends LocalBaseType implements INotification {
+  @Field(() => NotificationTypeEnum)
+  public notificationType: NotificationTypeEnum;
 
   @Field(() => Boolean)
   public read: boolean;

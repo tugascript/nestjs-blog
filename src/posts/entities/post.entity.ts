@@ -3,13 +3,12 @@ import {
   Collection,
   Entity,
   ManyToMany,
-  ManyToOne,
   OneToMany,
   Property,
 } from '@mikro-orm/core';
 import { ExtendedBaseEntity } from '../../common/entities/extended-base.entity';
 import { IPost } from '../interfaces/post.interface';
-import { IsNotEmpty, Length } from 'class-validator';
+import { Length } from 'class-validator';
 import { TagEntity } from '../../tags/entities/tag.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { CommentEntity } from '../../comments/entities/comment.entity';
@@ -42,11 +41,4 @@ export class PostEntity extends ExtendedBaseEntity implements IPost {
     CommentEntity,
     PostEntity
   >(this);
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    onDelete: 'cascade',
-  })
-  @IsNotEmpty()
-  public author!: UserEntity;
 }

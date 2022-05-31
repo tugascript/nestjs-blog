@@ -10,15 +10,15 @@ import {
 import { validate } from 'class-validator';
 import slugify from 'slugify';
 import { v4 as uuidV4 } from 'uuid';
-import { NotificationTypeEnum } from './enums/notification-type.enum';
+import { ChangeTypeEnum } from './enums/change-type.enum';
 import {
   getOppositeOrder,
   getQueryOrder,
   QueryOrderEnum,
-  tOpositeOrder,
+  tOppositeOrder,
   tOrderEnum,
 } from './enums/query-order.enum';
-import { INotification } from './interfaces/notification.interface';
+import { IChange } from './interfaces/change.interface';
 import { IEdge, IPaginated } from './interfaces/paginated.interface';
 
 @Injectable()
@@ -144,19 +144,19 @@ export class CommonService {
   //-------------------- Notification Generation --------------------
 
   /**
-   * Generate Notification
+   * Generate Change
    *
-   * Generates an entity notification
+   * Generates an entity change
    */
-  public generateNotification<T>(
+  public generateChange<T>(
     entity: T,
-    nType: NotificationTypeEnum,
+    changeType: ChangeTypeEnum,
     cursor: keyof T,
     innerCursor?: string,
-  ): INotification<T> {
+  ): IChange<T> {
     return {
       edge: this.createEdge(entity, cursor, innerCursor),
-      type: nType,
+      type: changeType,
     };
   }
 
@@ -361,7 +361,7 @@ export class CommonService {
   private getFilters<T>(
     cursor: keyof T,
     decoded: string | number,
-    order: tOrderEnum | tOpositeOrder,
+    order: tOrderEnum | tOppositeOrder,
     innerCursor?: string,
   ): FilterQuery<Dictionary<T>> {
     return innerCursor

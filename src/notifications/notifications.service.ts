@@ -4,24 +4,29 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { AppNotificationEntity } from './entities/app-notification.entity';
+import { NotificationEntity } from './entities/notification.entity';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { CommonService } from '../common/common.service';
 import { PubSub } from 'mercurius';
 import { ConfigService } from '@nestjs/config';
 import { v5 as uuidV5 } from 'uuid';
-import { AppNotificationTypeEnum } from './enums/app-notification-type.enum';
-import { INotificationSubscription } from './interfaces/notification-subscription.interface';
+import { NotificationTypeEnum } from './enums/notification-type.enum';
+import { INotificationChange } from './interfaces/notification-change.interface';
 import { LocalMessageType } from '../common/gql-types/message.type';
+import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
+import { IPaginated } from '../common/interfaces/paginated.interface';
+import { QueryOrderEnum } from '../common/enums/query-order.enum';
+import { ChangeTypeEnum } from '../common/enums/change-type.enum';
 
 @Injectable()
 export class NotificationsService {
+  private readonly notificationAlias = 'an';
   private readonly notificationNamespace =
     this.configService.get('NOTIFICATION_UUID');
 
   constructor(
-    @InjectRepository(AppNotificationEntity)
-    private readonly notificationsRepository: EntityRepository<AppNotificationEntity>,
+    @InjectRepository(NotificationEntity)
+    private readonly notificationsRepository: EntityRepository<NotificationEntity>,
     private readonly configService: ConfigService,
     private readonly commonService: CommonService,
   ) {}
@@ -33,23 +38,23 @@ export class NotificationsService {
    */
   public async createAppNotification(
     pubsub: PubSub,
-    notificationType: AppNotificationTypeEnum,
+    notificationType: NotificationTypeEnum,
     userId: number,
     recipientId: number,
     postId: number,
     commentId?: number,
     replyId?: number,
-  ): Promise<AppNotificationEntity> {
+  ): Promise<void> {
     switch (notificationType) {
-      case AppNotificationTypeEnum.COMMENT:
-      case AppNotificationTypeEnum.COMMENT_LIKE:
+      case NotificationTypeEnum.COMMENT:
+      case NotificationTypeEnum.COMMENT_LIKE:
         if (!commentId) {
           throw new InternalServerErrorException('Comment id is required');
         }
         break;
-      case AppNotificationTypeEnum.REPLY:
-      case AppNotificationTypeEnum.REPLY_LIKE:
-      case AppNotificationTypeEnum.MENTION:
+      case NotificationTypeEnum.REPLY:
+      case NotificationTypeEnum.REPLY_LIKE:
+      case NotificationTypeEnum.MENTION:
         if (!commentId || !replyId) {
           throw new InternalServerErrorException(
             'Comment and reply ids are required',
@@ -70,13 +75,16 @@ export class NotificationsService {
       this.notificationsRepository,
       notification,
     );
-    pubsub.publish<INotificationSubscription>({
+    pubsub.publish<INotificationChange>({
       topic: uuidV5(recipientId.toString(), this.notificationNamespace),
       payload: {
-        notification,
+        notificationChange: this.commonService.generateChange(
+          notification,
+          ChangeTypeEnum.NEW,
+          'id',
+        ),
       },
     });
-    return notification;
   }
 
   /**
@@ -87,7 +95,7 @@ export class NotificationsService {
   public async readNotification(
     userId: number,
     notificationId: number,
-  ): Promise<AppNotificationEntity> {
+  ): Promise<NotificationEntity> {
     const notification = await this.notificationById(userId, notificationId);
 
     if (notification.read) {
@@ -120,6 +128,71 @@ export class NotificationsService {
   }
 
   /**
+   * Remove Notification
+   *
+   * Removes notification automatically after like and comment changes.
+   */
+  public async removeNotification(
+    pubsub: PubSub,
+    notificationType: NotificationTypeEnum,
+    userId: number,
+    postId: number,
+    commentId?: number,
+    replyId?: number,
+  ): Promise<void> {
+    const notification = await this.notificationsRepository.findOne({
+      notificationType,
+      issuer: userId,
+      post: postId,
+      comment: commentId,
+      reply: replyId,
+    });
+
+    if (notification) {
+      await this.commonService.removeEntity(
+        this.notificationsRepository,
+        notification,
+      );
+      pubsub.publish<INotificationChange>({
+        topic: uuidV5(userId.toString(), this.notificationNamespace),
+        payload: {
+          notificationChange: this.commonService.generateChange(
+            notification,
+            ChangeTypeEnum.DELETE,
+            'id',
+          ),
+        },
+      });
+    }
+  }
+
+  /**
+   * Filter Notifications
+   *
+   * Gets a recipient's newer paginated notifications.
+   */
+  public async filterNotifications(
+    userId: number,
+    { unreadOnly, after, first }: FilterNotificationsDto,
+  ): Promise<IPaginated<NotificationEntity>> {
+    const qb = this.notificationsRepository
+      .createQueryBuilder(this.notificationAlias)
+      .where({ recipient: userId });
+
+    if (unreadOnly) qb.andWhere({ read: false });
+
+    return this.commonService.queryBuilderPagination(
+      this.notificationAlias,
+      'id',
+      first,
+      QueryOrderEnum.DESC,
+      qb,
+      after,
+      true,
+    );
+  }
+
+  /**
    * Notification By ID
    *
    * Returns a recipient's notification by id.
@@ -127,7 +200,7 @@ export class NotificationsService {
   private async notificationById(
     userId: number,
     notificationId: number,
-  ): Promise<AppNotificationEntity> {
+  ): Promise<NotificationEntity> {
     const notification = await this.notificationsRepository.findOne({
       id: notificationId,
       recipient: userId,

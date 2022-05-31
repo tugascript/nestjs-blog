@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { NotificationsResolver } from './notifications.resolver';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { AppNotificationEntity } from './entities/app-notification.entity';
+import { NotificationEntity } from './entities/notification.entity';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([AppNotificationEntity])],
+  imports: [MikroOrmModule.forFeature([NotificationEntity])],
   providers: [NotificationsResolver, NotificationsService],
   exports: [NotificationsService],
 })

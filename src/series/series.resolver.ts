@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { SeriesService } from './series.service';
 import { CreateSeriesInput } from './inputs/create-series.input';
 import { UpdateSeriesInput } from './inputs/update-series.input';
@@ -17,6 +17,8 @@ import { SearchDto } from '../common/dtos/search.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { SeriesTagInput } from './inputs/series-tag.input';
 import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
+import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
+import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -67,6 +69,22 @@ export class SeriesResolver {
     return this.seriesService.removeTagFromSeries(user.id, input);
   }
 
+  @Mutation(() => SeriesType)
+  public async followSeries(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: SeriesDto,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.followSeries(user.id, dto.seriesId);
+  }
+
+  @Mutation(() => SeriesType)
+  public async unfollowSeries(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: SeriesDto,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.unfollowSeries(user.id, dto.seriesId);
+  }
+
   @UseGuards(PublisherGuard)
   @Mutation(() => LocalMessageType)
   public async deleteSeries(
@@ -94,5 +112,12 @@ export class SeriesResolver {
     @Args() dto: SearchDto,
   ): Promise<IPaginated<SeriesEntity>> {
     return this.seriesService.filterSeries(dto);
+  }
+
+  // RESOLVE FIELDS FOR LOADERS
+
+  @ResolveField('posts', () => PaginatedPostsType)
+  public getPosts(@Args() dto: FilterRelationDto) {
+    return;
   }
 }

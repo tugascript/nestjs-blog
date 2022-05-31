@@ -17,6 +17,7 @@ import {
   QueryCursorEnum,
 } from '../common/enums/query-cursor.enum';
 import { LocalMessageType } from '../common/gql-types/message.type';
+import { SeriesFollowerEntity } from './entities/series-follower.entity';
 
 @Injectable()
 export class SeriesService {
@@ -25,6 +26,8 @@ export class SeriesService {
   constructor(
     @InjectRepository(SeriesEntity)
     private readonly seriesRepository: EntityRepository<SeriesEntity>,
+    @InjectRepository(SeriesFollowerEntity)
+    private readonly seriesFollowerRepository: EntityRepository<SeriesFollowerEntity>,
     private readonly tagsService: TagsService,
     private readonly commonService: CommonService,
     private readonly uploaderService: UploaderService,
@@ -130,6 +133,43 @@ export class SeriesService {
   }
 
   /**
+   * Follow Series
+   *
+   * Creates a follower for a given series by ID.
+   */
+  public async followSeries(
+    userId: number,
+    seriesId: number,
+  ): Promise<SeriesEntity> {
+    const series = await this.seriesById(seriesId);
+    const follower = await this.seriesFollowerByPKs(userId, seriesId);
+    await this.commonService.saveEntity(
+      this.seriesFollowerRepository,
+      follower,
+      true,
+    );
+    return series;
+  }
+
+  /**
+   * Unfollow Series
+   *
+   * Deletes a follower for a given series by ID.
+   */
+  public async unfollowSeries(
+    userId: number,
+    seriesId: number,
+  ): Promise<SeriesEntity> {
+    const series = await this.seriesById(seriesId);
+    const follower = await this.seriesFollowerByPKs(userId, seriesId);
+    await this.commonService.removeEntity(
+      this.seriesFollowerRepository,
+      follower,
+    );
+    return series;
+  }
+
+  /**
    * Delete Series
    *
    * Delete CRUD action for Series.
@@ -200,6 +240,20 @@ export class SeriesService {
   }
 
   /**
+   * Series With Tags
+   *
+   * Fetch series by ID with a left join for tags.
+   */
+  public async seriesWithTags(seriesId: number): Promise<SeriesEntity> {
+    const series = await this.seriesRepository.findOne(
+      { id: seriesId },
+      { populate: ['tags'] },
+    );
+    this.commonService.checkExistence('Series', series);
+    return series;
+  }
+
+  /**
    * Author's Series By ID
    *
    * Single Read CRUD action for Series.
@@ -215,5 +269,22 @@ export class SeriesService {
     });
     this.commonService.checkExistence('Series', series);
     return series;
+  }
+
+  /**
+   * Series' Follower by PKs
+   *
+   * Finds a single series follower by user and series IDs.
+   */
+  private async seriesFollowerByPKs(
+    userId: number,
+    seriesId: number,
+  ): Promise<SeriesFollowerEntity> {
+    const follower = await this.seriesFollowerRepository.findOne({
+      user: userId,
+      series: seriesId,
+    });
+    this.commonService.checkExistence("Series' Follower", follower);
+    return follower;
   }
 }

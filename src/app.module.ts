@@ -22,6 +22,7 @@ import { SeriesModule } from './series/series.module';
 import { TagsModule } from './tags/tags.module';
 import { LoadersModule } from './loaders/loaders.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { NotificationsModule } from './notifications/notifications.module';
       useClass: CacheConfig,
     }),
     GraphQLModule.forRootAsync({
-      imports: [ConfigModule, AuthModule],
+      imports: [ConfigModule, AuthModule, LoadersModule],
       driver: GraphQLDriver,
       useClass: GqlConfigService,
     }),
@@ -55,6 +56,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     TagsModule,
     LoadersModule,
     NotificationsModule,
+    AdminModule,
   ],
   providers: [
     {

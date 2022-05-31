@@ -18,6 +18,11 @@ import {
   QueryCursorEnum,
 } from '../common/enums/query-cursor.enum';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PubSub } from 'mercurius';
+import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
+import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
+import { SeriesService } from '../series/series.service';
 
 @Injectable()
 export class PostsService {
@@ -30,6 +35,8 @@ export class PostsService {
     private readonly uploaderService: UploaderService,
     private readonly tagsService: TagsService,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
+    private readonly seriesService: SeriesService,
   ) {}
 
   /**
@@ -142,10 +149,21 @@ export class PostsService {
    *
    * The current user adds a like to a post.
    */
-  public async likePost(userId: number, postId: number): Promise<PostEntity> {
+  public async likePost(
+    pubsub: PubSub,
+    userId: number,
+    postId: number,
+  ): Promise<PostEntity> {
     const post = await this.postById(postId);
     post.likes.add(this.usersService.getUserRef(userId));
     await this.commonService.saveEntity(this.postsRepository, post);
+    await this.notificationsService.createAppNotification(
+      pubsub,
+      NotificationTypeEnum.POST_LIKE,
+      userId,
+      post.author.id,
+      postId,
+    );
     return post;
   }
 
@@ -154,10 +172,21 @@ export class PostsService {
    *
    * The current user removes a like from a post.
    */
-  public async unlikePost(userId: number, postId: number): Promise<PostEntity> {
+  public async unlikePost(
+    pubsub: PubSub,
+    userId: number,
+    postId: number,
+  ): Promise<PostEntity> {
     const post = await this.postById(postId);
     post.likes.remove(this.usersService.getUserRef(userId));
     await this.commonService.saveEntity(this.postsRepository, post);
+    await this.notificationsService.removeNotification(
+      pubsub,
+      NotificationTypeEnum.POST_LIKE,
+      userId,
+      post.author.id,
+      postId,
+    );
     return post;
   }
 
@@ -228,6 +257,48 @@ export class PostsService {
 
     if (authorId) qb.andWhere({ author: authorId });
 
+    return this.commonService.queryBuilderPagination(
+      this.postAlias,
+      getQueryCursor(cursor),
+      first,
+      order,
+      qb,
+      after,
+      cursor === QueryCursorEnum.DATE,
+    );
+  }
+
+  /**
+   * Filter Series' Posts
+   *
+   * Multi Read CRUD action for Posts.
+   * Find posts with the tags of a given series.
+   */
+  public async filterSeriesPosts({
+    seriesId,
+    cursor,
+    order,
+    first,
+    after,
+  }: FilterSeriesPostDto): Promise<IPaginated<PostEntity>> {
+    const series = await this.seriesService.seriesWithTags(seriesId);
+    const tags = series.tags.getItems();
+    const tagIds: number[] = [];
+
+    for (let i = 0; i < tags.length; i++) {
+      tagIds.push(tags[i].id);
+    }
+
+    const qb = this.postsRepository
+      .createQueryBuilder(this.postAlias)
+      .leftJoin(`${this.postAlias}.tags`, 't')
+      .where({
+        tags: {
+          id: {
+            $in: tagIds,
+          },
+        },
+      });
     return this.commonService.queryBuilderPagination(
       this.postAlias,
       getQueryCursor(cursor),
