@@ -1,17 +1,11 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
-import {
-  Collection,
-  Entity,
-  ManyToMany,
-  OneToMany,
-  Property,
-} from '@mikro-orm/core';
+import { Collection, Entity, OneToMany, Property } from '@mikro-orm/core';
 import { ExtendedBaseEntity } from '../../common/entities/extended-base.entity';
 import { IPost } from '../interfaces/post.interface';
 import { Length } from 'class-validator';
-import { TagEntity } from '../../tags/entities/tag.entity';
-import { UserEntity } from '../../users/entities/user.entity';
 import { CommentEntity } from '../../comments/entities/comment.entity';
+import { PostLikeEntity } from './post-like.entity';
+import { PostTagEntity } from './post-tag.entity';
 
 @Entity({ tableName: 'posts' })
 export class PostEntity extends ExtendedBaseEntity implements IPost {
@@ -24,15 +18,15 @@ export class PostEntity extends ExtendedBaseEntity implements IPost {
 
   // RELATIONS
 
-  @ManyToMany({ entity: () => TagEntity, owner: true })
-  public tags: Collection<TagEntity, PostEntity> = new Collection<
-    TagEntity,
+  @OneToMany(() => PostTagEntity, (t) => t.post)
+  public tags: Collection<PostTagEntity, PostEntity> = new Collection<
+    PostTagEntity,
     PostEntity
   >(this);
 
-  @ManyToMany({ entity: () => UserEntity, owner: true })
-  public likes: Collection<UserEntity, PostEntity> = new Collection<
-    UserEntity,
+  @OneToMany(() => PostLikeEntity, (l) => l.post)
+  public likes: Collection<PostLikeEntity, PostEntity> = new Collection<
+    PostLikeEntity,
     PostEntity
   >(this);
 

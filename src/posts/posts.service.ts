@@ -23,6 +23,8 @@ import { PubSub } from 'mercurius';
 import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
 import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
 import { SeriesService } from '../series/series.service';
+import { PostLikeEntity } from './entities/post-like.entity';
+import { PostTagEntity } from './entities/post-tag.entity';
 
 @Injectable()
 export class PostsService {
@@ -31,6 +33,10 @@ export class PostsService {
   constructor(
     @InjectRepository(PostEntity)
     private readonly postsRepository: EntityRepository<PostEntity>,
+    @InjectRepository(PostLikeEntity)
+    private readonly postLikesRepository: EntityRepository<PostLikeEntity>,
+    @InjectRepository(PostTagEntity)
+    private readonly postTagsRepository: EntityRepository<PostTagEntity>,
     private readonly commonService: CommonService,
     private readonly uploaderService: UploaderService,
     private readonly tagsService: TagsService,
@@ -54,14 +60,27 @@ export class PostsService {
       content,
       slug: this.commonService.generateSlug(title),
     });
-    const tags = await this.tagsService.findTagsByIds(userId, tagIds);
-    post.tags.set(tags);
     post.picture = await this.uploaderService.uploadImage(
       userId,
       picture,
       RatioEnum.BANNER,
     );
     await this.commonService.saveEntity(this.postsRepository, post, true);
+    const tags = await this.tagsService.findTagsByIds(userId, tagIds);
+    const postTags: PostTagEntity[] = [];
+
+    for (let i = 0; i < tags.length; i++) {
+      postTags.push(
+        this.postTagsRepository.create({
+          tag: tags[i],
+          post,
+        }),
+      );
+    }
+
+    await this.commonService.throwDuplicateError(
+      this.postTagsRepository.persistAndFlush(postTags),
+    );
     return post;
   }
 
@@ -122,8 +141,11 @@ export class PostsService {
   ): Promise<PostEntity> {
     const post = await this.authorsPostById(userId, postId);
     const tag = await this.tagsService.tagById(userId, tagId);
-    post.tags.add(tag);
-    await this.commonService.saveEntity(this.postsRepository, post);
+    const postTag = this.postTagsRepository.create({
+      tag,
+      post,
+    });
+    await this.commonService.saveEntity(this.postTagsRepository, postTag, true);
     return post;
   }
 
@@ -138,9 +160,8 @@ export class PostsService {
     { postId, tagId }: PostTagInput,
   ): Promise<PostEntity> {
     const post = await this.authorsPostById(userId, postId);
-    const tag = await this.tagsService.tagById(userId, tagId);
-    post.tags.remove(tag);
-    await this.commonService.saveEntity(this.postsRepository, post);
+    const postTag = await this.postTagByPKs(postId, tagId);
+    await this.commonService.removeEntity(this.postTagsRepository, postTag);
     return post;
   }
 
@@ -155,8 +176,11 @@ export class PostsService {
     postId: number,
   ): Promise<PostEntity> {
     const post = await this.postById(postId);
-    post.likes.add(this.usersService.getUserRef(userId));
-    await this.commonService.saveEntity(this.postsRepository, post);
+    const like = this.postLikesRepository.create({
+      user: userId,
+      post: postId,
+    });
+    await this.commonService.saveEntity(this.postLikesRepository, like, true);
     await this.notificationsService.createAppNotification(
       pubsub,
       NotificationTypeEnum.POST_LIKE,
@@ -178,8 +202,8 @@ export class PostsService {
     postId: number,
   ): Promise<PostEntity> {
     const post = await this.postById(postId);
-    post.likes.remove(this.usersService.getUserRef(userId));
-    await this.commonService.saveEntity(this.postsRepository, post);
+    const like = await this.postLikeByPKs(userId, postId);
+    await this.commonService.removeEntity(this.postLikesRepository, like);
     await this.notificationsService.removeNotification(
       pubsub,
       NotificationTypeEnum.POST_LIKE,
@@ -286,7 +310,7 @@ export class PostsService {
     const tagIds: number[] = [];
 
     for (let i = 0; i < tags.length; i++) {
-      tagIds.push(tags[i].id);
+      tagIds.push(tags[i].tag.id);
     }
 
     const qb = this.postsRepository
@@ -294,7 +318,7 @@ export class PostsService {
       .leftJoin(`${this.postAlias}.tags`, 't')
       .where({
         tags: {
-          id: {
+          tag: {
             $in: tagIds,
           },
         },
@@ -316,12 +340,49 @@ export class PostsService {
    * Single Read CRUD action for Post.
    * Finds a single post by ID of the current user.
    */
-  private async authorsPostById(userId: number, postId: number) {
+  private async authorsPostById(
+    userId: number,
+    postId: number,
+  ): Promise<PostEntity> {
     const post = await this.postsRepository.findOne({
       author: userId,
       id: postId,
     });
     this.commonService.checkExistence('Post', post);
     return post;
+  }
+
+  /**
+   * Post Like By PKs
+   *
+   * Gets a like entity given the user and post IDs.
+   */
+  private async postLikeByPKs(
+    userId: number,
+    postId: number,
+  ): Promise<PostLikeEntity> {
+    const postLike = await this.postLikesRepository.findOne({
+      user: userId,
+      post: postId,
+    });
+    this.commonService.checkExistence('Post Like', postLike);
+    return postLike;
+  }
+
+  /**
+   * Post Like By PKs
+   *
+   * Gets a like entity given the tag and post IDs.
+   */
+  private async postTagByPKs(
+    postId: number,
+    tagId: number,
+  ): Promise<PostTagEntity> {
+    const postTag = await this.postTagsRepository.findOne({
+      tag: tagId,
+      post: postId,
+    });
+    this.commonService.checkExistence('Post Tag', postTag);
+    return postTag;
   }
 }

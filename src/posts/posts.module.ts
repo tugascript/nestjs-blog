@@ -7,10 +7,12 @@ import { TagsModule } from '../tags/tags.module';
 import { UsersModule } from '../users/users.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SeriesModule } from '../series/series.module';
+import { PostLikeEntity } from './entities/post-like.entity';
+import { PostTagEntity } from './entities/post-tag.entity';
 
 @Module({
   imports: [
-    MikroOrmModule.forFeature([PostEntity]),
+    MikroOrmModule.forFeature([PostEntity, PostLikeEntity, PostTagEntity]),
     TagsModule,
     UsersModule,
     SeriesModule,

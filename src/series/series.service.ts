@@ -18,6 +18,8 @@ import {
 } from '../common/enums/query-cursor.enum';
 import { LocalMessageType } from '../common/gql-types/message.type';
 import { SeriesFollowerEntity } from './entities/series-follower.entity';
+import { FilterDto } from '../common/dtos/filter.dto';
+import { SeriesTagEntity } from './entities/series-tag.entity';
 
 @Injectable()
 export class SeriesService {
@@ -27,7 +29,9 @@ export class SeriesService {
     @InjectRepository(SeriesEntity)
     private readonly seriesRepository: EntityRepository<SeriesEntity>,
     @InjectRepository(SeriesFollowerEntity)
-    private readonly seriesFollowerRepository: EntityRepository<SeriesFollowerEntity>,
+    private readonly seriesFollowersRepository: EntityRepository<SeriesFollowerEntity>,
+    @InjectRepository(SeriesTagEntity)
+    private readonly seriesTagsRepository: EntityRepository<SeriesTagEntity>,
     private readonly tagsService: TagsService,
     private readonly commonService: CommonService,
     private readonly uploaderService: UploaderService,
@@ -48,14 +52,27 @@ export class SeriesService {
       slug: this.commonService.generateSlug(title),
       author: userId,
     });
-    const tags = await this.tagsService.findTagsByIds(userId, tagIds);
-    series.tags.set(tags);
     series.picture = await this.uploaderService.uploadImage(
       userId,
       picture,
       RatioEnum.BANNER,
     );
     await this.commonService.saveEntity(this.seriesRepository, series, true);
+    const tags = await this.tagsService.findTagsByIds(userId, tagIds);
+    const seriesTags: SeriesTagEntity[] = [];
+
+    for (let i = 0; i < tags.length; i++) {
+      seriesTags.push(
+        this.seriesTagsRepository.create({
+          series,
+          tag: tags[i],
+        }),
+      );
+    }
+
+    await this.commonService.throwDuplicateError(
+      this.seriesTagsRepository.persistAndFlush(seriesTags),
+    );
     return series;
   }
 
@@ -110,8 +127,15 @@ export class SeriesService {
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
     const tag = await this.tagsService.tagById(userId, tagId);
-    series.tags.add(tag);
-    await this.commonService.saveEntity(this.seriesRepository, series);
+    const seriesTag = await this.seriesTagsRepository.create({
+      series,
+      tag,
+    });
+    await this.commonService.saveEntity(
+      this.seriesTagsRepository,
+      seriesTag,
+      true,
+    );
     return series;
   }
 
@@ -126,9 +150,8 @@ export class SeriesService {
     { seriesId, tagId }: SeriesTagInput,
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
-    const tag = await this.tagsService.tagById(userId, tagId);
-    series.tags.remove(tag);
-    await this.commonService.saveEntity(this.seriesRepository, series);
+    const seriesTag = await this.seriesTagByPKs(seriesId, tagId);
+    await this.commonService.removeEntity(this.seriesTagsRepository, seriesTag);
     return series;
   }
 
@@ -144,7 +167,7 @@ export class SeriesService {
     const series = await this.seriesById(seriesId);
     const follower = await this.seriesFollowerByPKs(userId, seriesId);
     await this.commonService.saveEntity(
-      this.seriesFollowerRepository,
+      this.seriesFollowersRepository,
       follower,
       true,
     );
@@ -163,7 +186,7 @@ export class SeriesService {
     const series = await this.seriesById(seriesId);
     const follower = await this.seriesFollowerByPKs(userId, seriesId);
     await this.commonService.removeEntity(
-      this.seriesFollowerRepository,
+      this.seriesFollowersRepository,
       follower,
     );
     return series;
@@ -240,6 +263,58 @@ export class SeriesService {
   }
 
   /**
+   * Filter Followed Series
+   *
+   * Multi Read CRUD action for Series.
+   * Filters paginated Series by the ones followed by a given user.
+   */
+  public async filterFollowedSeries(
+    userId: number,
+    { cursor, order, first, after }: FilterDto,
+  ): Promise<IPaginated<SeriesEntity>> {
+    const following = await this.seriesFollowersRepository.find({
+      user: userId,
+    });
+
+    if (following.length === 0) {
+      return {
+        currentCount: 0,
+        previousCount: 0,
+        edges: [],
+        pageInfo: {
+          endCursor: '',
+          startCursor: '',
+          hasPreviousPage: false,
+          hasNextPage: false,
+        },
+      };
+    }
+
+    const ids: number[] = [];
+
+    for (let i = 0; i < following.length; i++) {
+      ids.push(following[i].series.id);
+    }
+
+    const qb = this.seriesRepository
+      .createQueryBuilder(this.seriesAlias)
+      .where({
+        id: {
+          $in: ids,
+        },
+      });
+    return this.commonService.queryBuilderPagination(
+      this.seriesAlias,
+      getQueryCursor(cursor),
+      first,
+      order,
+      qb,
+      after,
+      cursor === QueryCursorEnum.DATE,
+    );
+  }
+
+  /**
    * Series With Tags
    *
    * Fetch series by ID with a left join for tags.
@@ -280,11 +355,28 @@ export class SeriesService {
     userId: number,
     seriesId: number,
   ): Promise<SeriesFollowerEntity> {
-    const follower = await this.seriesFollowerRepository.findOne({
+    const follower = await this.seriesFollowersRepository.findOne({
       user: userId,
       series: seriesId,
     });
     this.commonService.checkExistence("Series' Follower", follower);
     return follower;
+  }
+
+  /**
+   * Series' Follower by PKs
+   *
+   * Finds a single series follower by user and series IDs.
+   */
+  private async seriesTagByPKs(
+    seriesId: number,
+    tagId: number,
+  ): Promise<SeriesTagEntity> {
+    const tag = await this.seriesTagsRepository.findOne({
+      series: seriesId,
+      tag: tagId,
+    });
+    this.commonService.checkExistence("Series' Tag", tag);
+    return tag;
   }
 }

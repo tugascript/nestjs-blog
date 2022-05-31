@@ -14,12 +14,17 @@ import { IBase } from '../common/interfaces/base.interface';
 import { getQueryCursor } from '../common/enums/query-cursor.enum';
 import { ISeriesPostsResult } from './interfaces/series-posts-result.interface';
 import { SeriesFollowerEntity } from '../series/entities/series-follower.entity';
+import { ISeriesFollowerCountResult } from './interfaces/series-followers-count-result.interface';
+import { SeriesTagEntity } from '../series/entities/series-tag.entity';
+import { PostTagEntity } from '../posts/entities/post-tag.entity';
+import { PostLikeEntity } from '../posts/entities/post-like.entity';
 
 @Injectable()
 export class LoadersService {
   private readonly seriesAlias = 's';
   private readonly postsAlias = 'p';
   private readonly tagAlias = 't';
+  private readonly followersAlias = 'f';
 
   constructor(
     @InjectRepository(UserEntity)
@@ -28,8 +33,14 @@ export class LoadersService {
     private readonly seriesRepository: EntityRepository<SeriesEntity>,
     @InjectRepository(SeriesFollowerEntity)
     private readonly seriesFollowerRepository: EntityRepository<SeriesFollowerEntity>,
+    @InjectRepository(SeriesTagEntity)
+    private readonly seriesTagsRepository: EntityRepository<SeriesTagEntity>,
     @InjectRepository(PostEntity)
     private readonly postRepository: EntityRepository<PostEntity>,
+    @InjectRepository(PostTagEntity)
+    private readonly postTagsRepository: EntityRepository<PostTagEntity>,
+    @InjectRepository(PostLikeEntity)
+    private readonly postLikesRepository: EntityRepository<PostLikeEntity>,
     @InjectRepository(CommentEntity)
     private readonly commentsRepository: EntityRepository<CommentEntity>,
     private readonly commonService: CommonService,
@@ -65,20 +76,60 @@ export class LoadersService {
       if (data.length === 0) return [];
 
       const series = this.getEntities(data);
-      await this.seriesRepository.populate(series, ['tags']);
+      await this.seriesRepository.populate(series, ['tags', 'tags.tag']);
       const tags: TagEntity[][] = [];
 
       for (let i = 0; i < series.length; i++) {
-        tags.push(series[i].tags.getItems());
+        const seriesTags = series[i].tags.getItems();
+        const innerTags: TagEntity[] = [];
+
+        for (let j = 0; j < seriesTags.length; j++) {
+          innerTags.push(seriesTags[j].tag);
+        }
+
+        tags.push(innerTags);
       }
 
       return tags;
     };
   }
 
-  public seriesFollowerCountLoader() {
+  /**
+   * Series Followers Count Loader
+   *
+   * Get followers count relation.
+   */
+  public seriesFollowersCountLoader() {
     return async (data: ILoader<SeriesEntity>[]): Promise<number[]> => {
-      // @todo: implement this relation
+      if (data.length === 0) return [];
+
+      const ids = this.getEntityIds(data);
+      const seriesId = this.seriesAlias + '.id';
+      const knex = this.seriesRepository.getKnex();
+      const seriesRef = knex.ref(seriesId);
+      const followersCount = this.seriesFollowerRepository
+        .createQueryBuilder(this.followersAlias)
+        .where({
+          series: seriesRef,
+        })
+        .count(`${this.followersAlias}.user_id`)
+        .as('count');
+      const raw: ISeriesFollowerCountResult[] = await this.seriesRepository
+        .createQueryBuilder(this.seriesAlias)
+        .select([seriesId, followersCount])
+        .where({
+          id: {
+            $in: ids,
+          },
+        })
+        .execute();
+      const map = new Map<number, number>();
+
+      for (let i = 0; i < raw.length; i++) {
+        map.set(raw[i].id, raw[i].count);
+      }
+
+      return this.getResults(ids, map);
     };
   }
 
@@ -91,6 +142,7 @@ export class LoadersService {
     return async (
       data: ILoader<SeriesEntity, FilterPostsRelationDto>[],
     ): Promise<IPaginated<PostEntity>[]> => {
+      // @todo: Change this function for the new tag entities
       if (data.length === 0) return [];
 
       const { cursor, order, first } = data[0].params;
@@ -166,6 +218,13 @@ export class LoadersService {
     };
   }
 
+  //_________ POSTS LOADERS _________
+
+  /**
+   * Get Entities
+   *
+   * Maps the entity object to the entity itself.
+   */
   private getEntities<T extends IBase, P = undefined>(
     items: ILoader<T, P>[],
   ): T[] {

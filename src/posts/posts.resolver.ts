@@ -28,6 +28,7 @@ import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { PubSub } from 'mercurius';
 import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
+import { PaginatedCommentsType } from '../comments/gql-types/paginated-comments.type';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -133,12 +134,17 @@ export class PostsResolver {
     return this.postsService.filterSeriesPosts(dto);
   }
 
-  /**
-   * Logic Inside Loaders
-   */
+  //_____ LOADERS _____//
+
   @ResolveField('likes', () => PaginatedUsersType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async getLikes(@Args() _: FilterRelationDto) {
+    return;
+  }
+
+  @ResolveField('comments', () => PaginatedCommentsType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getComments(@Args() _: FilterRelationDto) {
     return;
   }
 }

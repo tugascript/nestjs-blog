@@ -113,6 +113,7 @@ export class GqlConfigService implements GqlOptionsFactory {
           author: this.loadersService.seriesAuthorLoader(),
           tags: this.loadersService.seriesTagsLoader(),
           posts: this.loadersService.seriesPostsLoader(),
+          followersCount: this.loadersService.seriesFollowersCountLoader(),
         },
       },
       plugins,

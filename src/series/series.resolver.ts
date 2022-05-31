@@ -19,6 +19,7 @@ import { SeriesTagInput } from './inputs/series-tag.input';
 import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
 import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
+import { FilterDto } from '../common/dtos/filter.dto';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -114,10 +115,19 @@ export class SeriesResolver {
     return this.seriesService.filterSeries(dto);
   }
 
+  @Query(() => PaginatedSeriesType)
+  public async filterFollowedSeries(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: FilterDto,
+  ): Promise<IPaginated<SeriesEntity>> {
+    return this.seriesService.filterFollowedSeries(user.id, dto);
+  }
+
   // RESOLVE FIELDS FOR LOADERS
 
   @ResolveField('posts', () => PaginatedPostsType)
-  public getPosts(@Args() dto: FilterRelationDto) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getPosts(@Args() _: FilterRelationDto) {
     return;
   }
 }
