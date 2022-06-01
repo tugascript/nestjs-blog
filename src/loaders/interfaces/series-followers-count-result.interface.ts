@@ -1,4 +1,4 @@
 export interface ISeriesFollowerCountResult {
-  id: number;
+  series_id: number;
   count: number;
 }

@@ -219,7 +219,7 @@ export class UsersService {
   /**
    * Get User By Id
    *
-   * Gets user by id, usually the current logged in user
+   * Gets user by id, usually the current logged-in user
    */
   public async getUserById(id: number): Promise<UserEntity> {
     const user = await this.usersRepository.findOne({ id });

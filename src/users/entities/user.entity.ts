@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 import {
+  Collection,
   Embedded,
   Entity,
   Enum,
+  OneToMany,
   OptionalProps,
   Property,
 } from '@mikro-orm/core';
@@ -23,6 +25,8 @@ import { CredentialsEmbeddable } from '../embeddables/credentials.embeddable';
 import { OnlineStatusEnum } from '../enums/online-status.enum';
 import { RoleEnum } from '../enums/role.enum';
 import { IUser } from '../interfaces/user.interface';
+import { PostLikeEntity } from '../../posts/entities/post-like.entity';
+import { SeriesFollowerEntity } from '../../series/entities/series-follower.entity';
 
 @Entity({ tableName: 'users' })
 export class UserEntity extends LocalBaseEntity implements IUser {
@@ -111,4 +115,14 @@ export class UserEntity extends LocalBaseEntity implements IUser {
   @Property()
   @IsDate()
   public lastOnline: Date = new Date();
+
+  @OneToMany(() => PostLikeEntity, (l) => l.user)
+  public likedPosts: Collection<PostLikeEntity, UserEntity> = new Collection<
+    PostLikeEntity,
+    UserEntity
+  >(this);
+
+  @OneToMany(() => SeriesFollowerEntity, (f) => f.user)
+  public followedSeries: Collection<SeriesFollowerEntity, UserEntity> =
+    new Collection<SeriesFollowerEntity, UserEntity>(this);
 }

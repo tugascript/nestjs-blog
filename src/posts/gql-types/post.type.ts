@@ -23,4 +23,7 @@ export class PostType extends ExtendedBaseType implements IPost {
 
   @Field(() => PaginatedCommentsType)
   public comments: IPaginated<IComment>;
+
+  @Field(() => Int)
+  public commentsCount: number;
 }
