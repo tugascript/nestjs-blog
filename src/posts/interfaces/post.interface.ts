@@ -9,7 +9,6 @@ export interface IPost extends IExtendedBase {
   content: string;
   published: boolean;
   tags: Collection<any, any> | ITag[];
-  author: IUser;
   likes: Collection<any, any> | IPaginated<IUser>;
   comments: Collection<any, any> | IPaginated<IComment>;
 }

@@ -6,23 +6,23 @@ import {
   OneToMany,
   Property,
 } from '@mikro-orm/core';
-import { IComment } from '../interfaces/comments.interface';
 import { IsNotEmpty, Length } from 'class-validator';
 import { UserEntity } from '../../users/entities/user.entity';
 import { PostEntity } from '../../posts/entities/post.entity';
-import { ReplyEntity } from './reply.entity';
-import { CommentLikeEntity } from './comment-like.entity';
+import { IReply } from '../interfaces/reply.interface';
+import { CommentEntity } from './comment.entity';
+import { ReplyLikeEntity } from './reply-like.entity';
 
-@Entity({ tableName: 'comments' })
-export class CommentEntity extends LocalBaseEntity implements IComment {
+@Entity({ tableName: 'replies' })
+export class ReplyEntity extends LocalBaseEntity implements IReply {
   @Property({ columnType: 'varchar(350)' })
   @Length(1, 350)
   public content: string;
 
-  @OneToMany(() => CommentLikeEntity, (l) => l.comment)
-  public likes: Collection<CommentLikeEntity, CommentEntity> = new Collection<
-    CommentLikeEntity,
-    CommentEntity
+  @OneToMany(() => ReplyLikeEntity, (l) => l.reply)
+  public likes: Collection<ReplyLikeEntity, ReplyEntity> = new Collection<
+    ReplyLikeEntity,
+    ReplyEntity
   >(this);
 
   @ManyToOne({
@@ -40,9 +40,17 @@ export class CommentEntity extends LocalBaseEntity implements IComment {
   @IsNotEmpty()
   public post!: PostEntity;
 
-  @OneToMany(() => ReplyEntity, (r) => r.comment)
-  public replies: Collection<ReplyEntity, CommentEntity> = new Collection<
-    ReplyEntity,
-    CommentEntity
-  >(this);
+  @ManyToOne({
+    entity: () => CommentEntity,
+    inversedBy: (p) => p.replies,
+    onDelete: 'cascade',
+  })
+  public comment!: CommentEntity;
+
+  @ManyToOne({
+    entity: () => UserEntity,
+    onDelete: 'cascade',
+    nullable: true,
+  })
+  public mention?: UserEntity;
 }

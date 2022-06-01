@@ -23,6 +23,7 @@ import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { IPostLikesResult } from './interfaces/post-likes-result.interface';
 import { ICountResult } from './interfaces/count-result.interface';
 import { IPostCommentsResult } from './interfaces/post-comments-result.interface';
+import { IUser } from '../users/interfaces/user.interface';
 
 @Injectable()
 export class LoadersService {
@@ -142,24 +143,6 @@ export class LoadersService {
   }
 
   //_________ SERIES LOADERS _________
-  /**
-   * Series Author Loader
-   *
-   * Get author relation.
-   */
-  public seriesAuthorLoader() {
-    return async (data: ILoader<SeriesEntity>[]): Promise<UserEntity[]> => {
-      const ids = LoadersService.getRelationIds(data, 'author');
-      const users = await this.usersRepository.find({
-        id: {
-          $in: ids,
-        },
-      });
-      const map = LoadersService.getEntityMap(users);
-      return LoadersService.getResults(ids, map);
-    };
-  }
-
   /**
    * Series Tags Loader
    *
@@ -302,26 +285,6 @@ export class LoadersService {
   }
 
   //_________ POSTS LOADERS _________
-
-  /**
-   * Post Author Loader
-   *
-   * Get author relation.
-   */
-  public postAuthorLoader() {
-    return async (data: ILoader<PostEntity>[]): Promise<UserEntity[]> => {
-      if (data.length === 0) return [];
-
-      const ids = LoadersService.getRelationIds(data, 'author');
-      const users = await this.usersRepository.find({
-        id: {
-          $in: ids,
-        },
-      });
-      const map = LoadersService.getEntityMap(users);
-      return LoadersService.getResults(ids, map);
-    };
-  }
 
   /**
    * Post Tags Loader
@@ -540,6 +503,54 @@ export class LoadersService {
           ),
         );
       }
+    };
+  }
+
+  //_________ COMMENTS LOADERS __________
+  public commentsLikesCountLoader() {
+    return async (data: ILoader<CommentEntity>[]) => {
+      if (data.length === 0) return [];
+
+      const ids = LoadersService.getEntityIds(data);
+      const likesCount = this.likesRepository
+        .createQueryBuilder(this.likeAlias)
+        .count(`${this.likeAlias}.id`)
+        .as('count');
+      const raw: ICountResult[] = await this.commentsRepository
+        .createQueryBuilder(this.commentAlias)
+        .select([`${this.commentAlias}.id`, likesCount])
+        .where({ id: { $in: ids } })
+        .groupBy(`${this.commentAlias}.id`)
+        .execute();
+      const map = new Map<number, number>();
+
+      for (let i = 0; i < raw.length; i++) {
+        map.set(raw[i].id, raw[i].count);
+      }
+
+      return LoadersService.getResults(ids, map);
+    };
+  }
+
+  //_________ GENERIC LOADERS __________
+
+  /**
+   * Comments Post Loader
+   *
+   * Get post relation.
+   */
+  public authorRelation<T extends IBase & { author: IUser }>() {
+    return async (data: ILoader<T>[]): Promise<UserEntity[]> => {
+      if (data.length === 0) return [];
+
+      const ids = LoadersService.getRelationIds(data, 'author');
+      const users = await this.usersRepository.find({
+        id: {
+          $in: ids,
+        },
+      });
+      const map = LoadersService.getEntityMap(users);
+      return LoadersService.getResults(ids, map);
     };
   }
 }

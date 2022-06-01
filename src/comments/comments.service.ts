@@ -13,16 +13,24 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
 import { LocalMessageType } from '../common/gql-types/message.type';
 import { ConfigService } from '@nestjs/config';
-import { ICommentChange } from './interfaces/comment-change.type';
+import { ICommentChange } from './interfaces/comment-change.interface';
 import { v5 as uuidV5 } from 'uuid';
 import { ChangeTypeEnum } from '../common/enums/change-type.enum';
-import { ReplyInput } from './inputs/reply.input';
+import { CreateReplyInput } from './inputs/create-reply.input';
 import { FilterCommentsDto } from './dtos/filter-comments.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
+import { CommentLikeEntity } from './entities/comment-like.entity';
+import { ReplyEntity } from './entities/reply.entity';
+import { ReplyLikeEntity } from './entities/reply-like.entity';
+import { IReplyChange } from './interfaces/reply-change.interface';
+import { UpdateCommentInput } from './inputs/update-comment.input';
+import { UpdateReplyInput } from './inputs/update-reply.input';
+import { ReplyDto } from './dtos/reply.dto';
 
 @Injectable()
 export class CommentsService {
-  private readonly commentsAlias = 'c';
+  private readonly commentAlias = 'c';
+  private readonly replyAlias = 'r';
   private readonly commentNamespace =
     this.configService.get<string>('COMMENT_UUID');
   private readonly replyNamespace =
@@ -31,6 +39,12 @@ export class CommentsService {
   constructor(
     @InjectRepository(CommentEntity)
     private readonly commentsRepository: EntityRepository<CommentEntity>,
+    @InjectRepository(CommentLikeEntity)
+    private readonly commentLikesRepository: EntityRepository<CommentLikeEntity>,
+    @InjectRepository(ReplyEntity)
+    private readonly repliesRepository: EntityRepository<ReplyEntity>,
+    @InjectRepository(ReplyLikeEntity)
+    private readonly replyLikesRepository: EntityRepository<ReplyLikeEntity>,
     private readonly configService: ConfigService,
     private readonly commonService: CommonService,
     private readonly postsService: PostsService,
@@ -75,7 +89,7 @@ export class CommentsService {
   public async updateComment(
     pubsub: PubSub,
     userId: number,
-    { commentId, content }: ReplyInput,
+    { commentId, content }: UpdateCommentInput,
   ): Promise<CommentEntity> {
     const comment = await this.authorsCommentById(userId, commentId);
     comment.content = profanity.censor(content, CensorType.AllVowels);
@@ -96,59 +110,9 @@ export class CommentsService {
     commentId: number,
   ): Promise<LocalMessageType> {
     const comment = await this.authorsCommentById(userId, commentId);
-    await this.commonService.removeEntity(this.commentsRepository, comment);
-
-    if (comment?.replying) {
-      await this.notificationsService.removeNotification(
-        pubsub,
-        NotificationTypeEnum.REPLY,
-        userId,
-        comment.post.id,
-        comment.id,
-        comment.replying.id,
-      );
-    } else {
-      await this.notificationsService.removeNotification(
-        pubsub,
-        NotificationTypeEnum.COMMENT,
-        userId,
-        comment.post.id,
-        comment.id,
-      );
-    }
 
     this.publishCommentChange(pubsub, ChangeTypeEnum.DELETE, comment);
     return new LocalMessageType('Comment deleted successfully');
-  }
-
-  /**
-   * Reply to Comment
-   *
-   * Replies to a comment and creates a new reply notification.
-   */
-  public async replyToComment(
-    pubsub: PubSub,
-    userId: number,
-    { commentId, content }: ReplyInput,
-  ): Promise<CommentEntity> {
-    const comment = await this.commentById(commentId);
-    const reply = await this.commentsRepository.create({
-      replying: comment,
-      post: comment.post.id,
-      author: userId,
-      content: profanity.censor(content, CensorType.AllVowels),
-    });
-    await this.commonService.saveEntity(this.commentsRepository, reply, true);
-    await this.notificationsService.createAppNotification(
-      pubsub,
-      NotificationTypeEnum.REPLY,
-      userId,
-      comment.post.id,
-      comment.id,
-      reply.id,
-    );
-    this.publishCommentChange(pubsub, ChangeTypeEnum.NEW, reply);
-    return reply;
   }
 
   /**
@@ -162,28 +126,22 @@ export class CommentsService {
     commentId: number,
   ): Promise<CommentEntity> {
     const comment = await this.commentById(commentId);
-    comment.likes.add(this.usersService.getUserRef(userId));
-    await this.commonService.saveEntity(this.commentsRepository, comment);
-
-    if (comment?.replying) {
-      await this.notificationsService.createAppNotification(
-        pubsub,
-        NotificationTypeEnum.REPLY_LIKE,
-        userId,
-        comment.post.id,
-        comment.id,
-        comment.replying.id,
-      );
-    } else {
-      await this.notificationsService.createAppNotification(
-        pubsub,
-        NotificationTypeEnum.COMMENT_LIKE,
-        userId,
-        comment.post.id,
-        comment.id,
-      );
-    }
-
+    const like = await this.commentLikesRepository.create({
+      comment,
+      user: userId,
+    });
+    await this.commonService.saveEntity(
+      this.commentLikesRepository,
+      like,
+      true,
+    );
+    await this.notificationsService.createAppNotification(
+      pubsub,
+      NotificationTypeEnum.COMMENT_LIKE,
+      userId,
+      comment.post.id,
+      comment.id,
+    );
     this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, comment);
     return comment;
   }
@@ -199,30 +157,143 @@ export class CommentsService {
     commentId: number,
   ): Promise<CommentEntity> {
     const comment = await this.commentById(commentId);
-    comment.likes.remove(this.usersService.getUserRef(userId));
-    await this.commonService.saveEntity(this.commentsRepository, comment);
-
-    if (comment?.replying) {
-      await this.notificationsService.removeNotification(
-        pubsub,
-        NotificationTypeEnum.REPLY_LIKE,
-        userId,
-        comment.post.id,
-        comment.id,
-        comment.replying.id,
-      );
-    } else {
-      await this.notificationsService.removeNotification(
-        pubsub,
-        NotificationTypeEnum.COMMENT_LIKE,
-        userId,
-        comment.post.id,
-        comment.id,
-      );
-    }
-
+    const like = await this.commentLikeByPKs(userId, commentId);
+    await this.commonService.removeEntity(this.commentLikesRepository, like);
+    await this.notificationsService.removeNotification(
+      pubsub,
+      NotificationTypeEnum.COMMENT_LIKE,
+      userId,
+      comment.post.id,
+      comment.id,
+    );
     this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, comment);
     return comment;
+  }
+
+  /**
+   * Reply to Comment
+   *
+   * Replies to a comment and creates a new reply notification.
+   */
+  public async replyToComment(
+    pubsub: PubSub,
+    userId: number,
+    { commentId, content, replyId }: CreateReplyInput,
+  ): Promise<ReplyEntity> {
+    const comment = await this.commentById(commentId);
+    const reply = this.repliesRepository.create({
+      content: profanity.censor(content, CensorType.AllVowels),
+      author: userId,
+      comment,
+    });
+
+    if (replyId) {
+      const parentReply = await this.replyByIds(commentId, replyId);
+      reply.mention = parentReply.author;
+    }
+
+    await this.commonService.saveEntity(this.repliesRepository, reply, true);
+    await this.notificationsService.createAppNotification(
+      pubsub,
+      NotificationTypeEnum.REPLY,
+      userId,
+      comment.post.id,
+      comment.id,
+      reply.id,
+    );
+    this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, comment);
+    this.publishReplyChange(pubsub, ChangeTypeEnum.NEW, reply);
+    return reply;
+  }
+
+  /**
+   * Update Reply
+   *
+   * Updates a reply.
+   */
+  public async updateReply(
+    pubsub: PubSub,
+    userId: number,
+    { commentId, replyId, content }: UpdateReplyInput,
+  ): Promise<ReplyEntity> {
+    const reply = await this.authorsReplyByIds(userId, commentId, replyId);
+    reply.content = profanity.censor(content, CensorType.AllVowels);
+    await this.commonService.saveEntity(this.repliesRepository, reply);
+    this.publishReplyChange(pubsub, ChangeTypeEnum.UPDATE, reply);
+    return reply;
+  }
+
+  /**
+   * Delete Reply
+   *
+   * Deletes a reply and removes its notification.
+   */
+  public async deleteReply(
+    pubsub: PubSub,
+    userId: number,
+    { commentId, replyId }: ReplyDto,
+  ): Promise<ReplyEntity> {
+    const reply = await this.authorsReplyByIds(
+      userId,
+      commentId,
+      replyId,
+      true,
+    );
+    await this.commonService.removeEntity(this.repliesRepository, reply);
+    await this.notificationsService.removeNotification(
+      pubsub,
+      NotificationTypeEnum.REPLY,
+      userId,
+      reply.post.id,
+      reply.comment.id,
+      reply.id,
+    );
+    this.publishReplyChange(pubsub, ChangeTypeEnum.DELETE, reply);
+    this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, reply.comment);
+    return reply;
+  }
+
+  public async likeReply(
+    pubsub: PubSub,
+    userId: number,
+    { commentId, replyId }: ReplyDto,
+  ): Promise<ReplyEntity> {
+    const reply = await this.replyByIds(commentId, replyId);
+    const like = this.replyLikesRepository.create({
+      user: userId,
+      reply,
+    });
+    await this.commonService.saveEntity(this.replyLikesRepository, like, true);
+    await this.notificationsService.createAppNotification(
+      pubsub,
+      NotificationTypeEnum.REPLY_LIKE,
+      userId,
+      reply.post.id,
+      reply.comment.id,
+      reply.id,
+    );
+    this.publishReplyChange(pubsub, ChangeTypeEnum.UPDATE, reply);
+    return reply;
+  }
+
+  public async unlikeReply(
+    pubsub: PubSub,
+    userId: number,
+    { commentId, replyId }: ReplyDto,
+  ): Promise<ReplyEntity> {
+    const reply = await this.replyByIds(commentId, replyId);
+    const like = await this.replyLikeByPKs(userId, replyId);
+    await this.commonService.removeEntity(this.replyLikesRepository, like);
+    await this.notificationsService.removeNotification(
+      pubsub,
+      NotificationTypeEnum.REPLY_LIKE,
+      userId,
+      reply.post.id,
+      reply.comment.id,
+      reply.id,
+    );
+    this.publishReplyChange(pubsub, ChangeTypeEnum.UPDATE, reply);
+    return reply;
   }
 
   /**
@@ -237,11 +308,11 @@ export class CommentsService {
     first,
   }: FilterCommentsDto): Promise<IPaginated<CommentEntity>> {
     const qb = this.commentsRepository
-      .createQueryBuilder(this.commentsAlias)
+      .createQueryBuilder(this.commentAlias)
       .where({ post: postId });
 
     return this.commonService.queryBuilderPagination(
-      this.commentsAlias,
+      this.commentAlias,
       'id',
       first,
       order,
@@ -251,6 +322,11 @@ export class CommentsService {
     );
   }
 
+  /**
+   * Author's Comment By ID
+   *
+   * Gets a comment from the current user by ID.
+   */
   private async authorsCommentById(
     userId: number,
     commentId: number,
@@ -269,22 +345,116 @@ export class CommentsService {
     return comment;
   }
 
+  /**
+   * Comment Like By PKs
+   *
+   * Gets a comet like by the comment and user IDs.
+   */
+  private async commentLikeByPKs(
+    userId: number,
+    commentId: number,
+  ): Promise<CommentLikeEntity> {
+    const commentLike = await this.commentLikesRepository.findOne({
+      user: userId,
+      comment: commentId,
+    });
+    this.commonService.checkExistence('Comment Like', commentLike);
+    return commentLike;
+  }
+
+  /**
+   * Reply By IDs
+   *
+   * Gets a reply by the reply and comment ID.
+   */
+  private async replyByIds(
+    commentId: number,
+    replyId: number,
+  ): Promise<ReplyEntity> {
+    const reply = await this.repliesRepository.findOne({
+      id: replyId,
+      comment: commentId,
+    });
+    this.commonService.checkExistence('Reply', reply);
+    return reply;
+  }
+
+  /**
+   * Author's Reply By IDS
+   *
+   * Gets a reply of the current user by the reply and comment ID.
+   */
+  private async authorsReplyByIds(
+    userId: number,
+    commentId: number,
+    replyId: number,
+    withComment = false,
+  ): Promise<ReplyEntity> {
+    const reply = await this.repliesRepository.findOne(
+      {
+        author: userId,
+        comment: commentId,
+        id: replyId,
+      },
+      withComment && { populate: ['comment'] },
+    );
+    this.commonService.checkExistence('Reply', reply);
+    return reply;
+  }
+
+  /**
+   * Reply Like by PKs
+   *
+   * Gets a reply like by the reply and user IDs.
+   */
+  private async replyLikeByPKs(
+    userId: number,
+    replyId: number,
+  ): Promise<ReplyLikeEntity> {
+    const replyLike = await this.replyLikesRepository.findOne({
+      user: userId,
+      reply: replyId,
+    });
+    this.commonService.checkExistence('Reply Like', replyLike);
+    return replyLike;
+  }
+
+  /**
+   * Publish Comment Change
+   *
+   * Publishes a comment change to the subscription.
+   */
   private publishCommentChange(
     pubsub: PubSub,
     changeType: ChangeTypeEnum,
     comment: CommentEntity,
   ): void {
-    const topic = comment?.replying
-      ? uuidV5(comment.replying.id.toString(), this.replyNamespace)
-      : uuidV5(comment.post.id.toString(), this.commentNamespace);
     pubsub.publish<ICommentChange>({
-      topic,
+      topic: uuidV5(comment.post.id.toString(), this.commentNamespace),
       payload: {
         commentChange: this.commonService.generateChange(
           comment,
           changeType,
           'id',
         ),
+      },
+    });
+  }
+
+  /**
+   * Publish Reply Change
+   *
+   * Publishes a reply change to the subscription.
+   */
+  private publishReplyChange(
+    pubsub: PubSub,
+    changeType: ChangeTypeEnum,
+    reply: ReplyEntity,
+  ): void {
+    pubsub.publish<IReplyChange>({
+      topic: uuidV5(reply.comment.post.id.toString(), this.replyNamespace),
+      payload: {
+        replyChange: this.commonService.generateChange(reply, changeType, 'id'),
       },
     });
   }

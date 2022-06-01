@@ -3,7 +3,7 @@ import { ICommentInput } from '../interfaces/comment-input.interface';
 import { Length } from 'class-validator';
 import { PostDto } from '../../posts/dtos/post.dto';
 
-@InputType()
+@InputType('CreateCommentInput')
 export abstract class CreateCommentInput
   extends PostDto
   implements ICommentInput

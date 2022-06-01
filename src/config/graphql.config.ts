@@ -15,6 +15,9 @@ import { MercuriusExtendedDriverConfig } from './interfaces/mercurius-extended-d
 import { IWsCtx } from './interfaces/ws-ctx.interface';
 import { IWsParams } from './interfaces/ws-params.interface';
 import { LoadersService } from '../loaders/loaders.service';
+import { ISeries } from '../series/interfaces/series.interface';
+import { IPost } from '../posts/interfaces/post.interface';
+import { IComment } from '../comments/interfaces/comments.interface';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -110,18 +113,21 @@ export class GqlConfigService implements GqlOptionsFactory {
       },
       loaders: {
         Series: {
-          author: this.loadersService.seriesAuthorLoader(),
+          author: this.loadersService.authorRelation<ISeries>(),
           tags: this.loadersService.seriesTagsLoader(),
           posts: this.loadersService.seriesPostsLoader(),
           followersCount: this.loadersService.seriesFollowersCountLoader(),
         },
         Post: {
-          author: this.loadersService.postAuthorLoader(),
+          author: this.loadersService.authorRelation<IPost>(),
           tags: this.loadersService.postTagsLoader(),
           likesCount: this.loadersService.postLikesCountLoader(),
           likes: this.loadersService.postLikesLoader(),
           commentsCount: this.loadersService.postCommentsCountLoader(),
           comments: this.loadersService.postCommentsLoader(),
+        },
+        Comment: {
+          author: this.loadersService.authorRelation<IComment>(),
         },
       },
       plugins,

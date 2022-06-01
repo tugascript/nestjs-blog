@@ -1,5 +1,5 @@
-import { ICommentInput } from './comment-input.interface';
-
-export interface IReplyInput extends ICommentInput {
+export interface IReplyInput {
   commentId: number;
+  content: string;
+  replyId?: number;
 }
