@@ -26,6 +26,7 @@ import { IReplyChange } from './interfaces/reply-change.interface';
 import { UpdateCommentInput } from './inputs/update-comment.input';
 import { UpdateReplyInput } from './inputs/update-reply.input';
 import { ReplyDto } from './dtos/reply.dto';
+import { FilterRepliesDto } from './dtos/filter-replies.dto';
 
 @Injectable()
 export class CommentsService {
@@ -171,6 +172,32 @@ export class CommentsService {
   }
 
   /**
+   * Filter Comments
+   *
+   * Multi read CRUD action for Comments.
+   */
+  public async filterComments({
+    postId,
+    order,
+    after,
+    first,
+  }: FilterCommentsDto): Promise<IPaginated<CommentEntity>> {
+    const qb = this.commentsRepository
+      .createQueryBuilder(this.commentAlias)
+      .where({ post: postId });
+
+    return this.commonService.queryBuilderPagination(
+      this.commentAlias,
+      'id',
+      first,
+      order,
+      qb,
+      after,
+      true,
+    );
+  }
+
+  /**
    * Reply to Comment
    *
    * Replies to a comment and creates a new reply notification.
@@ -232,7 +259,7 @@ export class CommentsService {
     pubsub: PubSub,
     userId: number,
     { commentId, replyId }: ReplyDto,
-  ): Promise<ReplyEntity> {
+  ): Promise<LocalMessageType> {
     const reply = await this.authorsReplyByIds(
       userId,
       commentId,
@@ -250,9 +277,14 @@ export class CommentsService {
     );
     this.publishReplyChange(pubsub, ChangeTypeEnum.DELETE, reply);
     this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, reply.comment);
-    return reply;
+    return new LocalMessageType('Reply deleted successfully');
   }
 
+  /**
+   * Like Reply
+   *
+   * Likes a reply and creates a new notification.
+   */
   public async likeReply(
     pubsub: PubSub,
     userId: number,
@@ -276,6 +308,11 @@ export class CommentsService {
     return reply;
   }
 
+  /**
+   * Unlike Reply
+   *
+   * Removes a like from a reply and removes its notification.
+   */
   public async unlikeReply(
     pubsub: PubSub,
     userId: number,
@@ -297,22 +334,22 @@ export class CommentsService {
   }
 
   /**
-   * Filter Comments
+   * Filter Replies
    *
-   * Multi read CRUD action for Comments.
+   * Multi read CRUD action for Replies.
    */
-  public async filterComments({
-    postId,
+  public filterReplies({
+    commentId,
     order,
     after,
     first,
-  }: FilterCommentsDto): Promise<IPaginated<CommentEntity>> {
-    const qb = this.commentsRepository
-      .createQueryBuilder(this.commentAlias)
-      .where({ post: postId });
+  }: FilterRepliesDto): Promise<IPaginated<ReplyEntity>> {
+    const qb = this.repliesRepository
+      .createQueryBuilder(this.replyAlias)
+      .where({ comment: commentId });
 
     return this.commonService.queryBuilderPagination(
-      this.commentAlias,
+      this.replyAlias,
       'id',
       first,
       order,
@@ -452,7 +489,7 @@ export class CommentsService {
     reply: ReplyEntity,
   ): void {
     pubsub.publish<IReplyChange>({
-      topic: uuidV5(reply.comment.post.id.toString(), this.replyNamespace),
+      topic: uuidV5(reply.comment.id.toString(), this.replyNamespace),
       payload: {
         replyChange: this.commonService.generateChange(reply, changeType, 'id'),
       },

@@ -9,6 +9,9 @@ import { SeriesFollowerEntity } from '../series/entities/series-follower.entity'
 import { SeriesTagEntity } from '../series/entities/series-tag.entity';
 import { PostLikeEntity } from '../posts/entities/post-like.entity';
 import { PostTagEntity } from '../posts/entities/post-tag.entity';
+import { CommentLikeEntity } from '../comments/entities/comment-like.entity';
+import { ReplyEntity } from '../comments/entities/reply.entity';
+import { ReplyLikeEntity } from '../comments/entities/reply-like.entity';
 
 @Module({
   imports: [
@@ -21,6 +24,9 @@ import { PostTagEntity } from '../posts/entities/post-tag.entity';
       PostLikeEntity,
       PostTagEntity,
       CommentEntity,
+      CommentLikeEntity,
+      ReplyEntity,
+      ReplyLikeEntity,
     ]),
   ],
   providers: [LoadersService],

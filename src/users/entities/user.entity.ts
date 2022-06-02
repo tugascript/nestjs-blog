@@ -27,6 +27,7 @@ import { RoleEnum } from '../enums/role.enum';
 import { IUser } from '../interfaces/user.interface';
 import { PostLikeEntity } from '../../posts/entities/post-like.entity';
 import { SeriesFollowerEntity } from '../../series/entities/series-follower.entity';
+import { CommentLikeEntity } from '../../comments/entities/comment-like.entity';
 
 @Entity({ tableName: 'users' })
 export class UserEntity extends LocalBaseEntity implements IUser {
@@ -125,4 +126,8 @@ export class UserEntity extends LocalBaseEntity implements IUser {
   @OneToMany(() => SeriesFollowerEntity, (f) => f.user)
   public followedSeries: Collection<SeriesFollowerEntity, UserEntity> =
     new Collection<SeriesFollowerEntity, UserEntity>(this);
+
+  @OneToMany(() => CommentLikeEntity, (l) => l.user)
+  public likedComments: Collection<CommentLikeEntity, UserEntity> =
+    new Collection<CommentLikeEntity, UserEntity>(this);
 }
