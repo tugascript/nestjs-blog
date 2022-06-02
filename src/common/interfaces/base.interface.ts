@@ -1,5 +1,6 @@
-export interface IBase {
+import { ICreation } from './creation.interface';
+
+export interface IBase extends ICreation {
   id: number;
-  createdAt: Date;
   updatedAt: Date;
 }

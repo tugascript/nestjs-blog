@@ -20,6 +20,7 @@ import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
 import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { FilterDto } from '../common/dtos/filter.dto';
+import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -128,6 +129,12 @@ export class SeriesResolver {
   @ResolveField('posts', () => PaginatedPostsType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public getPosts(@Args() _: FilterRelationDto) {
+    return;
+  }
+
+  @ResolveField('followers', () => PaginatedUsersType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getFollowers(@Args() _: FilterRelationDto) {
     return;
   }
 }

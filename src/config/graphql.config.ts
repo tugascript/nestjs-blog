@@ -113,13 +113,13 @@ export class GqlConfigService implements GqlOptionsFactory {
       },
       loaders: {
         Series: {
-          author: this.loadersService.authorRelation<ISeries>(),
+          author: this.loadersService.authorRelationLoader<ISeries>(),
           tags: this.loadersService.seriesTagsLoader(),
           posts: this.loadersService.seriesPostsLoader(),
           followersCount: this.loadersService.seriesFollowersCountLoader(),
         },
         Post: {
-          author: this.loadersService.authorRelation<IPost>(),
+          author: this.loadersService.authorRelationLoader<IPost>(),
           tags: this.loadersService.postTagsLoader(),
           likesCount: this.loadersService.postLikesCountLoader(),
           likes: this.loadersService.postLikesLoader(),
@@ -127,7 +127,11 @@ export class GqlConfigService implements GqlOptionsFactory {
           comments: this.loadersService.postCommentsLoader(),
         },
         Comment: {
-          author: this.loadersService.authorRelation<IComment>(),
+          author: this.loadersService.authorRelationLoader<IComment>(),
+          likesCount: this.loadersService.commentLikesCountLoader(),
+          likes: this.loadersService.commentLikesLoader(),
+          repliesCount: this.loadersService.commentRepliesCountLoader(),
+          replies: this.loadersService.commentRepliesLoader(),
         },
       },
       plugins,
