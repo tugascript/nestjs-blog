@@ -40,7 +40,7 @@ export class LoadersService {
     @InjectRepository(SeriesEntity)
     private readonly seriesRepository: EntityRepository<SeriesEntity>,
     @InjectRepository(SeriesFollowerEntity)
-    private readonly seriesFollowerRepository: EntityRepository<SeriesFollowerEntity>,
+    private readonly seriesFollowersRepository: EntityRepository<SeriesFollowerEntity>,
     @InjectRepository(SeriesTagEntity)
     private readonly seriesTagsRepository: EntityRepository<SeriesTagEntity>,
     @InjectRepository(PostEntity)
@@ -145,6 +145,88 @@ export class LoadersService {
     return results;
   }
 
+  private static getCounterResults(
+    ids: number[],
+    raw: ICountResult[],
+  ): number[] {
+    const map = new Map<number, number>();
+
+    for (let i = 0; i < raw.length; i++) {
+      const count = raw[i];
+      map.set(count.id, count.count);
+    }
+
+    return LoadersService.getResults(ids, map);
+  }
+
+  /**
+   * Basic Counter
+   *
+   * Loads the count of one-to-many relationships.
+   */
+  private static async basicCounter<T extends IBase, C extends IBase>(
+    data: ILoader<T>[],
+    parentRepo: EntityRepository<T>,
+    childRepo: EntityRepository<C>,
+    childRelation: keyof C,
+  ): Promise<number[]> {
+    if (data.length === 0) return [];
+
+    const parentId = 'p.id';
+    const knex = parentRepo.getKnex();
+    const parentRef = knex.ref(parentId);
+    const ids = LoadersService.getEntityIds(data);
+
+    const countQuery = childRepo
+      .createQueryBuilder('c')
+      .count('c.id')
+      .where({ [childRelation]: { $in: parentRef } })
+      .as('count');
+    const raw: ICountResult[] = await parentRepo
+      .createQueryBuilder('p')
+      .select([parentId, countQuery])
+      .where({ id: { $in: ids } })
+      .groupBy(parentId)
+      .execute();
+
+    return LoadersService.getCounterResults(ids, raw);
+  }
+
+  /**
+   * Pivot Counter
+   *
+   * Loads the count of many-to-many relationships.
+   */
+  private static async pivotCounter<T extends IBase, P extends ICreation>(
+    data: ILoader<T>[],
+    parentRepo: EntityRepository<T>,
+    pivotRepo: EntityRepository<P>,
+    pivotParent: keyof P,
+    pivotChild: keyof P,
+  ): Promise<number[]> {
+    if (data.length === 0) return [];
+
+    const strPivotChild = String(pivotChild);
+    const parentId = 'p.id';
+    const knex = parentRepo.getKnex();
+    const parentRef = knex.ref(parentId);
+    const ids = LoadersService.getEntityIds(data);
+
+    const countQuery = pivotRepo
+      .createQueryBuilder('pt')
+      .count(`pt.${strPivotChild}_id`)
+      .where({ [pivotParent]: { $in: parentRef } })
+      .as('count');
+    const raw: ICountResult[] = await parentRepo
+      .createQueryBuilder('p')
+      .select([parentId, countQuery])
+      .where({ id: { $in: ids } })
+      .groupBy(parentId)
+      .execute();
+
+    return LoadersService.getCounterResults(ids, raw);
+  }
+
   //_________ SERIES LOADERS _________
   /**
    * Series Tags Loader
@@ -174,6 +256,8 @@ export class LoadersService {
     };
   }
 
+  //_________ POSTS LOADERS _________
+
   /**
    * Series Followers Count Loader
    *
@@ -181,10 +265,10 @@ export class LoadersService {
    */
   public seriesFollowersCountLoader() {
     return async (data: ILoader<SeriesEntity>[]): Promise<number[]> => {
-      return this.pivotCounter(
+      return LoadersService.pivotCounter(
         data,
         this.seriesRepository,
-        this.seriesFollowerRepository,
+        this.seriesFollowersRepository,
         'series',
         'user',
       );
@@ -198,7 +282,7 @@ export class LoadersService {
       return this.pivotPaginator(
         data,
         this.seriesRepository,
-        this.seriesFollowerRepository,
+        this.seriesFollowersRepository,
         this.usersRepository,
         'series',
         'user',
@@ -286,8 +370,6 @@ export class LoadersService {
     };
   }
 
-  //_________ POSTS LOADERS _________
-
   /**
    * Post Tags Loader
    *
@@ -323,7 +405,7 @@ export class LoadersService {
    */
   public postLikesCountLoader() {
     return async (data: ILoader<PostEntity>[]): Promise<number[]> => {
-      return this.pivotCounter(
+      return LoadersService.pivotCounter(
         data,
         this.postsRepository,
         this.postLikesRepository,
@@ -332,6 +414,8 @@ export class LoadersService {
       );
     };
   }
+
+  //_________ COMMENTS LOADERS __________
 
   /**
    * Post Likes Loader
@@ -361,7 +445,7 @@ export class LoadersService {
    */
   public postCommentsCountLoader() {
     return async (data: ILoader<PostEntity>[]) => {
-      return this.basicCounter(
+      return LoadersService.basicCounter(
         data,
         this.postsRepository,
         this.commentsRepository,
@@ -389,11 +473,9 @@ export class LoadersService {
     };
   }
 
-  //_________ COMMENTS LOADERS __________
-
   public commentLikesCountLoader() {
     return async (data: ILoader<CommentEntity>[]) => {
-      return this.pivotCounter(
+      return LoadersService.pivotCounter(
         data,
         this.commentsRepository,
         this.commentLikesRepository,
@@ -402,6 +484,8 @@ export class LoadersService {
       );
     };
   }
+
+  // REPLY LOADERS
 
   public commentLikesLoader() {
     return async (
@@ -421,7 +505,7 @@ export class LoadersService {
 
   public commentRepliesCountLoader() {
     return async (data: ILoader<CommentEntity>[]): Promise<number[]> => {
-      return this.basicCounter(
+      return LoadersService.basicCounter(
         data,
         this.commentsRepository,
         this.repliesRepository,
@@ -443,7 +527,103 @@ export class LoadersService {
     };
   }
 
+  // USERS LOADERS
+
+  public replyLikesCountLoader() {
+    return async (data: ILoader<ReplyEntity>[]) => {
+      return LoadersService.pivotCounter(
+        data,
+        this.repliesRepository,
+        this.replyLikesRepository,
+        'reply',
+        'user',
+      );
+    };
+  }
+
+  public replyLikesLoader() {
+    return async (data: ILoader<ReplyEntity, FilterRelationDto>[]) => {
+      return this.pivotPaginator(
+        data,
+        this.repliesRepository,
+        this.replyLikesRepository,
+        this.usersRepository,
+        'reply',
+        'user',
+        'username',
+      );
+    };
+  }
+
+  public replyMentionLoader() {
+    return async (data: ILoader<ReplyEntity>[]) => {
+      if (data.length === 0) return [];
+
+      const replies = LoadersService.getEntities(data);
+      await this.repliesRepository.populate(replies, ['mention']);
+      const results: (UserEntity | null)[] = [];
+
+      for (let i = 0; i < replies.length; i++) {
+        results.push(replies[i].mention ?? null);
+      }
+
+      return results;
+    };
+  }
+
+  public userLikedPostsCountLoader() {
+    return async (data: ILoader<UserEntity>[]) => {
+      return LoadersService.pivotCounter(
+        data,
+        this.usersRepository,
+        this.postLikesRepository,
+        'user',
+        'post',
+      );
+    };
+  }
+
   //_________ GENERIC LOADERS __________
+
+  public userLikedPostsLoader() {
+    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+      return this.pivotPaginator(
+        data,
+        this.usersRepository,
+        this.postLikesRepository,
+        this.postsRepository,
+        'user',
+        'post',
+        'id',
+      );
+    };
+  }
+
+  public usersFollowedSeriesCountLoader() {
+    return async (data: ILoader<UserEntity>[]) => {
+      return LoadersService.pivotCounter(
+        data,
+        this.usersRepository,
+        this.seriesFollowersRepository,
+        'user',
+        'series',
+      );
+    };
+  }
+
+  public usersFollowedSeriesLoader() {
+    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+      return this.pivotPaginator(
+        data,
+        this.usersRepository,
+        this.seriesFollowersRepository,
+        this.seriesRepository,
+        'user',
+        'series',
+        'id',
+      );
+    };
+  }
 
   /**
    * Author Relation Loader
@@ -463,85 +643,6 @@ export class LoadersService {
       const map = LoadersService.getEntityMap(users);
       return LoadersService.getResults(ids, map);
     };
-  }
-
-  /**
-   * Basic Counter
-   *
-   * Loads the count of one-to-many relationships.
-   */
-  private async basicCounter<T extends IBase, C extends IBase>(
-    data: ILoader<T>[],
-    parentRepo: EntityRepository<T>,
-    childRepo: EntityRepository<C>,
-    childRelation: keyof C,
-  ): Promise<number[]> {
-    if (data.length === 0) return [];
-
-    const parentId = 'p.id';
-    const knex = parentRepo.getKnex();
-    const parentRef = knex.ref(parentId);
-    const ids = LoadersService.getEntityIds(data);
-
-    const countQuery = childRepo
-      .createQueryBuilder('c')
-      .count('c.id')
-      .where({ [childRelation]: { $in: parentRef } })
-      .as('count');
-    const raw: ICountResult[] = await parentRepo
-      .createQueryBuilder('p')
-      .select([parentId, countQuery])
-      .where({ id: { $in: ids } })
-      .groupBy(parentId)
-      .execute();
-
-    return this.getCounterResults(ids, raw);
-  }
-
-  /**
-   * Pivot Counter
-   *
-   * Loads the count of many-to-many relationships.
-   */
-  private async pivotCounter<T extends IBase, P extends ICreation>(
-    data: ILoader<T>[],
-    parentRepo: EntityRepository<T>,
-    pivotRepo: EntityRepository<P>,
-    pivotParent: keyof P,
-    pivotChild: keyof P,
-  ): Promise<number[]> {
-    if (data.length === 0) return [];
-
-    const strPivotChild = String(pivotChild);
-    const parentId = 'p.id';
-    const knex = parentRepo.getKnex();
-    const parentRef = knex.ref(parentId);
-    const ids = LoadersService.getEntityIds(data);
-
-    const countQuery = pivotRepo
-      .createQueryBuilder('pt')
-      .count(`pt.${strPivotChild}_id`)
-      .where({ [pivotParent]: { $in: parentRef } })
-      .as('count');
-    const raw: ICountResult[] = await parentRepo
-      .createQueryBuilder('p')
-      .select([parentId, countQuery])
-      .where({ id: { $in: ids } })
-      .groupBy(parentId)
-      .execute();
-
-    return this.getCounterResults(ids, raw);
-  }
-
-  private getCounterResults(ids: number[], raw: ICountResult[]): number[] {
-    const map = new Map<number, number>();
-
-    for (let i = 0; i < raw.length; i++) {
-      const count = raw[i];
-      map.set(count.id, count.count);
-    }
-
-    return LoadersService.getResults(ids, map);
   }
 
   /**

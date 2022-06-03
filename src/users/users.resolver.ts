@@ -18,6 +18,9 @@ import { UserEntity } from './entities/user.entity';
 import { PaginatedUsersType } from './gql-types/paginated-users.type';
 import { UserType } from './gql-types/user.type';
 import { UsersService } from './users.service';
+import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
+import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
+import { PaginatedSeriesType } from 'src/series/gql-types/paginated-series.type';
 
 @Resolver(() => UserType)
 export class UsersResolver {
@@ -58,11 +61,11 @@ export class UsersResolver {
 
   //____________________ PUBLIC QUERIES ____________________
   /*
-    Usefull for social media style apps where user haves descriptions
-    and profiles, I haven't implemented a profile in the user entity
-    but these are just example queries in case you implement one of
-    your own
-  */
+        Usefull for social media style apps where user haves descriptions
+        and profiles, I haven't implemented a profile in the user entity
+        but these are just example queries in case you implement one of
+        your own
+      */
 
   @Public()
   @Query(() => UserType)
@@ -86,5 +89,19 @@ export class UsersResolver {
     @CurrentUser() userId: number,
   ): string | null {
     return user.id === userId ? user.email : null;
+  }
+
+  // LOADERS
+
+  @ResolveField('likedPosts', () => PaginatedPostsType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getLikedPosts(@Args() _: FilterRelationDto) {
+    return;
+  }
+
+  @ResolveField('followedSeries', () => PaginatedSeriesType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getFollowedSeries(@Args() _: FilterRelationDto) {
+    return;
   }
 }

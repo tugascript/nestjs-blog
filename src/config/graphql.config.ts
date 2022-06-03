@@ -18,6 +18,7 @@ import { LoadersService } from '../loaders/loaders.service';
 import { ISeries } from '../series/interfaces/series.interface';
 import { IPost } from '../posts/interfaces/post.interface';
 import { IComment } from '../comments/interfaces/comments.interface';
+import { IReply } from '../comments/interfaces/reply.interface';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -132,6 +133,19 @@ export class GqlConfigService implements GqlOptionsFactory {
           likes: this.loadersService.commentLikesLoader(),
           repliesCount: this.loadersService.commentRepliesCountLoader(),
           replies: this.loadersService.commentRepliesLoader(),
+        },
+        Reply: {
+          author: this.loadersService.authorRelationLoader<IReply>(),
+          likesCount: this.loadersService.replyLikesCountLoader(),
+          likes: this.loadersService.replyLikesLoader(),
+          mention: this.loadersService.replyMentionLoader(),
+        },
+        User: {
+          likedPostsCount: this.loadersService.userLikedPostsCountLoader(),
+          likedPosts: this.loadersService.userLikedPostsLoader(),
+          followedSeriesCount:
+            this.loadersService.usersFollowedSeriesCountLoader(),
+          followedSeries: this.loadersService.usersFollowedSeriesLoader(),
         },
       },
       plugins,

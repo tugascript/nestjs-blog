@@ -1,5 +1,5 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityRepository, QueryBuilder } from '@mikro-orm/postgresql';
 import {
   BadRequestException,
   CACHE_MANAGER,
@@ -185,8 +185,7 @@ export class UsersService {
   public async getUncheckUser(
     email: string,
   ): Promise<UserEntity | undefined | null> {
-    const user = await this.usersRepository.findOne({ email });
-    return user;
+    return await this.usersRepository.findOne({ email });
   }
 
   /**
@@ -197,8 +196,7 @@ export class UsersService {
   public async getUncheckUserById(
     id: number,
   ): Promise<UserEntity | undefined | null> {
-    const user = await this.usersRepository.findOne({ id });
-    return user;
+    return await this.usersRepository.findOne({ id });
   }
 
   /**
@@ -301,5 +299,14 @@ export class UsersService {
    */
   public getUserRef(userId: number): UserEntity {
     return this.usersRepository.getReference(userId);
+  }
+
+  /**
+   * User's Query Builder
+   *
+   * Creates a query builder for the user entity
+   */
+  public usersQueryBuilder(alias = 'u'): QueryBuilder<UserEntity> {
+    return this.usersRepository.createQueryBuilder(alias);
   }
 }

@@ -29,6 +29,8 @@ import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { PubSub } from 'mercurius';
 import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
 import { PaginatedCommentsType } from '../comments/gql-types/paginated-comments.type';
+import { TagType } from '../tags/gql-types/tag.type';
+import { TagEntity } from '../tags/entities/tag.entity';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -132,6 +134,12 @@ export class PostsResolver {
     @Args() dto: FilterSeriesPostDto,
   ): Promise<IPaginated<PostEntity>> {
     return this.postsService.filterSeriesPosts(dto);
+  }
+
+  @Public()
+  @Query(() => [TagType])
+  public async postTags(@Args() dto: PostDto): Promise<TagEntity[]> {
+    return this.postsService.postTags(dto.postId);
   }
 
   //_____ LOADERS _____//

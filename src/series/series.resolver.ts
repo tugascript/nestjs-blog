@@ -21,6 +21,8 @@ import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { FilterDto } from '../common/dtos/filter.dto';
 import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
+import { FilterPostsRelationDto } from './dtos/filter-posts-relation.dto';
+import { TagEntity } from '../tags/entities/tag.entity';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -116,6 +118,7 @@ export class SeriesResolver {
     return this.seriesService.filterSeries(dto);
   }
 
+  @Public()
   @Query(() => PaginatedSeriesType)
   public async filterFollowedSeries(
     @CurrentUser() user: IAccessPayload,
@@ -124,11 +127,17 @@ export class SeriesResolver {
     return this.seriesService.filterFollowedSeries(user.id, dto);
   }
 
+  @Public()
+  @Query(() => [TagEntity])
+  public async seriesTags(@Args() dto: SeriesDto): Promise<TagEntity[]> {
+    return this.seriesService.seriesTags(dto.seriesId);
+  }
+
   // RESOLVE FIELDS FOR LOADERS
 
   @ResolveField('posts', () => PaginatedPostsType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public getPosts(@Args() _: FilterRelationDto) {
+  public getPosts(@Args() _: FilterPostsRelationDto) {
     return;
   }
 

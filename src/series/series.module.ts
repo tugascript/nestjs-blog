@@ -6,6 +6,7 @@ import { SeriesEntity } from './entities/series.entity';
 import { TagsModule } from '../tags/tags.module';
 import { SeriesFollowerEntity } from './entities/series-follower.entity';
 import { SeriesTagEntity } from './entities/series-tag.entity';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SeriesTagEntity } from './entities/series-tag.entity';
       SeriesTagEntity,
     ]),
     TagsModule,
+    UsersModule,
   ],
   providers: [SeriesResolver, SeriesService],
 })

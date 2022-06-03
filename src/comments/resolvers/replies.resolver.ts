@@ -17,7 +17,6 @@ import { v5 as uuidV5 } from 'uuid';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { IAccessPayload } from '../../auth/interfaces/access-payload.interface';
 import { LocalMessageType } from '../../common/gql-types/message.type';
-import { PaginatedCommentsType } from '../gql-types/paginated-comments.type';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { FilterRelationDto } from '../../common/dtos/filter-relation.dto';
 import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
@@ -102,12 +101,6 @@ export class RepliesResolver {
   }
 
   //______ LOADERS ______//
-
-  @ResolveField('replies', () => PaginatedCommentsType)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public getReplies(@Args() _: FilterRelationDto) {
-    return;
-  }
 
   @ResolveField('likes', () => PaginatedUsersType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -25,6 +25,7 @@ import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
 import { SeriesService } from '../series/series.service';
 import { PostLikeEntity } from './entities/post-like.entity';
 import { PostTagEntity } from './entities/post-tag.entity';
+import { TagEntity } from '../tags/entities/tag.entity';
 
 @Injectable()
 export class PostsService {
@@ -332,6 +333,21 @@ export class PostsService {
       after,
       cursor === QueryCursorEnum.DATE,
     );
+  }
+
+  public async postTags(postId: number): Promise<TagEntity[]> {
+    const post = await this.postsRepository.findOne(
+      { id: postId },
+      { populate: ['tags'] },
+    );
+    this.commonService.checkExistence('Post', post);
+    const ids: number[] = [];
+
+    for (const postTag of post.tags) {
+      ids.push(postTag.tag.id);
+    }
+
+    return await this.tagsService.findTagsByIds(post.author.id, ids);
   }
 
   /**

@@ -20,10 +20,15 @@ import { LocalMessageType } from '../common/gql-types/message.type';
 import { SeriesFollowerEntity } from './entities/series-follower.entity';
 import { FilterDto } from '../common/dtos/filter.dto';
 import { SeriesTagEntity } from './entities/series-tag.entity';
+import { TagEntity } from '../tags/entities/tag.entity';
+import { UsersService } from '../users/users.service';
+import { UserEntity } from '../users/entities/user.entity';
+import { FilterSeriesLikesDto } from './dtos/filter-series-likes.dto';
 
 @Injectable()
 export class SeriesService {
   private readonly seriesAlias = 's';
+  private readonly seriesLikeAlias = 'sl';
 
   constructor(
     @InjectRepository(SeriesEntity)
@@ -35,6 +40,7 @@ export class SeriesService {
     private readonly tagsService: TagsService,
     private readonly commonService: CommonService,
     private readonly uploaderService: UploaderService,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -311,6 +317,48 @@ export class SeriesService {
       qb,
       after,
       cursor === QueryCursorEnum.DATE,
+    );
+  }
+
+  /**
+   * Series Tags
+   *
+   * Gets the tags of a series by ID.
+   */
+  public async seriesTags(seriesId: number): Promise<TagEntity[]> {
+    const series = await this.seriesWithTags(seriesId);
+    const ids: number[] = [];
+
+    for (const tag of series.tags) {
+      ids.push(tag.tag.id);
+    }
+
+    return await this.tagsService.findTagsByIds(series.author.id, ids);
+  }
+
+  public async seriesLikes({
+    seriesId,
+    first,
+    after,
+    order,
+  }: FilterSeriesLikesDto): Promise<IPaginated<UserEntity>> {
+    const likesQuery = this.seriesFollowersRepository
+      .createQueryBuilder(this.seriesLikeAlias)
+      .select(`${this.seriesLikeAlias}.user_id`)
+      .where({
+        series: seriesId,
+      })
+      .getKnexQuery();
+    const qb = this.usersService
+      .usersQueryBuilder()
+      .where({ id: { $in: likesQuery } });
+    return this.commonService.queryBuilderPagination(
+      'u',
+      'username',
+      first,
+      order,
+      qb,
+      after,
     );
   }
 
