@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSeriesInput } from './inputs/create-series.input';
 import { UpdateSeriesInput } from './inputs/update-series.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -23,12 +23,12 @@ import { SeriesTagEntity } from './entities/series-tag.entity';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { UsersService } from '../users/users.service';
 import { UserEntity } from '../users/entities/user.entity';
-import { FilterSeriesLikesDto } from './dtos/filter-series-likes.dto';
+import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
 
 @Injectable()
 export class SeriesService {
   private readonly seriesAlias = 's';
-  private readonly seriesLikeAlias = 'sl';
+  private readonly seriesFollowersAlias = 'sf';
 
   constructor(
     @InjectRepository(SeriesEntity)
@@ -336,22 +336,26 @@ export class SeriesService {
     return await this.tagsService.findTagsByIds(series.author.id, ids);
   }
 
-  public async seriesLikes({
+  public async seriesFollowers({
     seriesId,
     first,
     after,
     order,
-  }: FilterSeriesLikesDto): Promise<IPaginated<UserEntity>> {
-    const likesQuery = this.seriesFollowersRepository
-      .createQueryBuilder(this.seriesLikeAlias)
-      .select(`${this.seriesLikeAlias}.user_id`)
+  }: FilterSeriesFollowersDto): Promise<IPaginated<UserEntity>> {
+    const count = await this.seriesRepository.count({ id: seriesId });
+
+    if (count === 0) throw new NotFoundException('Series not found');
+
+    const followersQuery = this.seriesFollowersRepository
+      .createQueryBuilder(this.seriesFollowersAlias)
+      .select(`${this.seriesFollowersAlias}.user_id`)
       .where({
         series: seriesId,
       })
       .getKnexQuery();
     const qb = this.usersService
       .usersQueryBuilder()
-      .where({ id: { $in: likesQuery } });
+      .where({ id: { $in: followersQuery } });
     return this.commonService.queryBuilderPagination(
       'u',
       'username',

@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { NotificationEntity } from './entities/notification.entity';
 import { EntityRepository } from '@mikro-orm/postgresql';
@@ -17,6 +13,13 @@ import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { QueryOrderEnum } from '../common/enums/query-order.enum';
 import { ChangeTypeEnum } from '../common/enums/change-type.enum';
+import { RequiredEntityData } from '@mikro-orm/core';
+import { ReplyEntity } from '../comments/entities/reply.entity';
+import { CommentEntity } from '../comments/entities/comment.entity';
+import { PostEntity } from '../posts/entities/post.entity';
+import { SeriesEntity } from '../series/entities/series.entity';
+import { IAuthored } from '../common/interfaces/authored.interface';
+import { NotificationEntityEnum } from './enums/notification-entity.enum';
 
 @Injectable()
 export class NotificationsService {
@@ -36,47 +39,72 @@ export class NotificationsService {
    *
    * Creates a new generic app notification.
    */
-  public async createAppNotification(
+  public async createAppNotification<T extends IAuthored>(
     pubsub: PubSub,
     notificationType: NotificationTypeEnum,
     userId: number,
-    recipientId: number,
-    postId: number,
-    commentId?: number,
-    replyId?: number,
+    entity: T,
   ): Promise<void> {
-    switch (notificationType) {
-      case NotificationTypeEnum.COMMENT:
-      case NotificationTypeEnum.COMMENT_LIKE:
-        if (!commentId) {
-          throw new InternalServerErrorException('Comment id is required');
-        }
-        break;
-      case NotificationTypeEnum.REPLY:
-      case NotificationTypeEnum.REPLY_LIKE:
-      case NotificationTypeEnum.MENTION:
-        if (!commentId || !replyId) {
-          throw new InternalServerErrorException(
-            'Comment and reply ids are required',
-          );
-        }
-        break;
-    }
-
-    const notification = await this.notificationsRepository.create({
+    const entityData: RequiredEntityData<NotificationEntity> = {
       notificationType,
       issuer: userId,
-      recipient: recipientId,
-      post: postId,
-      comment: commentId,
-      reply: replyId,
-    });
+    };
+
+    if (entity instanceof ReplyEntity) {
+      entityData.notificationEntity = NotificationEntityEnum.REPLY;
+      entityData.reply = entity.id;
+      entityData.comment = entity.comment.id;
+      entityData.post = entity.post.id;
+
+      switch (notificationType) {
+        case NotificationTypeEnum.REPLY:
+          entityData.recipient = entity.comment.author.id;
+          break;
+        case NotificationTypeEnum.MENTION:
+          entityData.recipient = entity.mention.id;
+          break;
+        case NotificationTypeEnum.LIKE:
+        default:
+          entityData.recipient = entity.author.id;
+          break;
+      }
+    } else if (entity instanceof CommentEntity) {
+      entityData.notificationEntity = NotificationEntityEnum.COMMENT;
+      entityData.comment = entity.id;
+      entityData.post = entity.post.id;
+      entityData.recipient = entity.author.id;
+
+      switch (notificationType) {
+        case NotificationTypeEnum.COMMENT:
+          entityData.recipient = entity.post.id;
+          break;
+        case NotificationTypeEnum.LIKE:
+        default:
+          entityData.recipient = entity.author.id;
+          break;
+      }
+    } else if (entity instanceof PostEntity) {
+      entityData.notificationEntity = NotificationEntityEnum.POST;
+      entityData.post = entity.id;
+      entityData.recipient = entity.author.id;
+    } else if (entity instanceof SeriesEntity) {
+      entityData.notificationEntity = NotificationEntityEnum.SERIES;
+      entityData.series = entity.id;
+      entityData.recipient = entity.author.id;
+    } else {
+      throw new BadRequestException('Invalid entity type');
+    }
+
+    const notification = this.notificationsRepository.create(entityData);
     await this.commonService.saveEntity(
       this.notificationsRepository,
       notification,
     );
     pubsub.publish<INotificationChange>({
-      topic: uuidV5(recipientId.toString(), this.notificationNamespace),
+      topic: uuidV5(
+        notification.recipient.id.toString(),
+        this.notificationNamespace,
+      ),
       payload: {
         notificationChange: this.commonService.generateChange(
           notification,

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePostInput } from './inputs/create-post.input';
 import { UpdatePostInput } from './inputs/update-post.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -26,10 +26,13 @@ import { SeriesService } from '../series/series.service';
 import { PostLikeEntity } from './entities/post-like.entity';
 import { PostTagEntity } from './entities/post-tag.entity';
 import { TagEntity } from '../tags/entities/tag.entity';
+import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
+import { UserEntity } from '../users/entities/user.entity';
 
 @Injectable()
 export class PostsService {
   private readonly postAlias = 'p';
+  private readonly postLikesAlias = 'pl';
 
   constructor(
     @InjectRepository(PostEntity)
@@ -348,6 +351,34 @@ export class PostsService {
     }
 
     return await this.tagsService.findTagsByIds(post.author.id, ids);
+  }
+
+  public async postLikes({
+    postId,
+    first,
+    after,
+    order,
+  }: FilterPostLikesDto): Promise<IPaginated<UserEntity>> {
+    const count = await this.postsRepository.count({ id: postId });
+
+    if (count === 0) throw new NotFoundException('Post not found');
+
+    const likesQuery = this.postLikesRepository
+      .createQueryBuilder(this.postLikesAlias)
+      .select(`${this.postLikesAlias}.user_id`)
+      .where({ post: postId })
+      .getKnexQuery();
+    const qb = this.usersService
+      .usersQueryBuilder()
+      .where({ id: { $in: likesQuery } });
+    return this.commonService.queryBuilderPagination(
+      'u',
+      'username',
+      first,
+      order,
+      qb,
+      after,
+    );
   }
 
   /**

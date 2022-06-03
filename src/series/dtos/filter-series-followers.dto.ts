@@ -3,7 +3,7 @@ import { ArgsType, Field, Int } from '@nestjs/graphql';
 import { IsInt, Min } from 'class-validator';
 
 @ArgsType()
-export abstract class FilterSeriesLikesDto extends OrderDto {
+export abstract class FilterSeriesFollowersDto extends OrderDto {
   @Field(() => Int)
   @IsInt()
   @Min(1)

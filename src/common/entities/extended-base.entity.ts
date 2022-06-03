@@ -1,13 +1,13 @@
-import { LocalBaseEntity } from './base.entity';
 import { IExtendedBase } from '../interfaces/extended-base.interface';
 import { Entity, ManyToOne, Property } from '@mikro-orm/core';
 import { IsNotEmpty, IsUrl, Length, Matches } from 'class-validator';
 import { NAME_REGEX, SLUG_REGEX } from '../constants/regex';
 import { UserEntity } from '../../users/entities/user.entity';
+import { AuthoredEntity } from './authored.entity';
 
 @Entity({ abstract: true })
 export abstract class ExtendedBaseEntity
-  extends LocalBaseEntity
+  extends AuthoredEntity
   implements IExtendedBase
 {
   @Property({ columnType: 'varchar(100)' })

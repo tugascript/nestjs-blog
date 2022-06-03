@@ -1,9 +1,7 @@
-import { IBase } from './base.interface';
-import { IUser } from '../../users/interfaces/user.interface';
+import { IAuthored } from './authored.interface';
 
-export interface IExtendedBase extends IBase {
+export interface IExtendedBase extends IAuthored {
   title: string;
   slug: string;
   picture: string;
-  author: IUser;
 }

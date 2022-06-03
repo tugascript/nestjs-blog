@@ -23,6 +23,8 @@ import { FilterDto } from '../common/dtos/filter.dto';
 import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
 import { FilterPostsRelationDto } from './dtos/filter-posts-relation.dto';
 import { TagEntity } from '../tags/entities/tag.entity';
+import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
+import { UserEntity } from '../users/entities/user.entity';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -131,6 +133,14 @@ export class SeriesResolver {
   @Query(() => [TagEntity])
   public async seriesTags(@Args() dto: SeriesDto): Promise<TagEntity[]> {
     return this.seriesService.seriesTags(dto.seriesId);
+  }
+
+  @Public()
+  @Query(() => PaginatedUsersType)
+  public async seriesFollowers(
+    @Args() dto: FilterSeriesFollowersDto,
+  ): Promise<IPaginated<UserEntity>> {
+    return this.seriesService.seriesFollowers(dto);
   }
 
   // RESOLVE FIELDS FOR LOADERS

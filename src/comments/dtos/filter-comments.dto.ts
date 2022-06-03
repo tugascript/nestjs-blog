@@ -1,16 +1,11 @@
 import { ArgsType, Field, Int } from '@nestjs/graphql';
-import { PaginationDto } from '../../common/dtos/pagination.dto';
-import { IsEnum, IsInt, Min } from 'class-validator';
-import { QueryOrderEnum } from '../../common/enums/query-order.enum';
+import { IsInt, Min } from 'class-validator';
+import { OrderDto } from '../../common/dtos/order.dto';
 
 @ArgsType()
-export abstract class FilterCommentsDto extends PaginationDto {
+export abstract class FilterCommentsDto extends OrderDto {
   @Field(() => Int)
   @IsInt()
   @Min(1)
   readonly postId: number;
-
-  @Field(() => QueryOrderEnum, { defaultValue: QueryOrderEnum.DESC })
-  @IsEnum(QueryOrderEnum)
-  readonly order: QueryOrderEnum = QueryOrderEnum.DESC;
 }

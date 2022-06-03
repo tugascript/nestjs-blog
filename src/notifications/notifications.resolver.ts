@@ -14,7 +14,7 @@ import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
 import { INotificationChange } from './interfaces/notification-change.interface';
 import { v5 as uuidV5 } from 'uuid';
 import { PubSub } from 'mercurius';
-import { AppNotificationDto } from './dtos/app-notification.dto';
+import { NotificationDto } from './dtos/notification.dto';
 import { PaginatedNotificationsType } from './gql-types/paginated-notifications.type';
 import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
 import { NotificationEntity } from './entities/notification.entity';
@@ -34,7 +34,7 @@ export class NotificationsResolver {
   @Mutation(() => NotificationType)
   public async readNotification(
     @CurrentUser() user: IAccessPayload,
-    @Args() dto: AppNotificationDto,
+    @Args() dto: NotificationDto,
   ) {
     return this.notificationsService.readNotification(
       user.id,
@@ -45,7 +45,7 @@ export class NotificationsResolver {
   @Mutation(() => NotificationType)
   public async deleteNotification(
     @CurrentUser() user: IAccessPayload,
-    @Args() dto: AppNotificationDto,
+    @Args() dto: NotificationDto,
   ) {
     return this.notificationsService.deleteNotification(
       user.id,

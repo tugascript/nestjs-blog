@@ -6,7 +6,10 @@ import { NotificationTypeEnum } from '../enums/notification-type.enum';
 import { CommentEntity } from '../../comments/entities/comment.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { PostEntity } from '../../posts/entities/post.entity';
-import { IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty } from 'class-validator';
+import { ReplyEntity } from '../../comments/entities/reply.entity';
+import { SeriesEntity } from '../../series/entities/series.entity';
+import { NotificationEntityEnum } from '../enums/notification-entity.enum';
 
 @Entity({ tableName: 'notifications' })
 export class NotificationEntity
@@ -15,9 +18,17 @@ export class NotificationEntity
 {
   @Enum({
     items: () => NotificationTypeEnum,
-    columnType: 'varchar(12)',
+    columnType: 'varchar(7)',
   })
+  @IsEnum(NotificationTypeEnum)
   public notificationType: NotificationTypeEnum;
+
+  @Enum({
+    items: () => NotificationEntityEnum,
+    columnType: 'varchar(7)',
+  })
+  @IsEnum(NotificationEntityEnum)
+  public notificationEntity: NotificationEntityEnum;
 
   @Property({ default: false })
   public read: boolean = false;
@@ -37,11 +48,18 @@ export class NotificationEntity
   public issuer: UserEntity;
 
   @ManyToOne({
+    entity: () => SeriesEntity,
+    onDelete: 'cascade',
+    nullable: true,
+  })
+  public series?: SeriesEntity;
+
+  @ManyToOne({
     entity: () => PostEntity,
     onDelete: 'cascade',
+    nullable: true,
   })
-  @IsNotEmpty()
-  public post: PostEntity;
+  public post?: PostEntity;
 
   @ManyToOne({
     entity: () => CommentEntity,
@@ -51,9 +69,9 @@ export class NotificationEntity
   public comment?: CommentEntity;
 
   @ManyToOne({
-    entity: () => CommentEntity,
+    entity: () => ReplyEntity,
     onDelete: 'set null',
     nullable: true,
   })
-  public reply?: CommentEntity;
+  public reply?: ReplyEntity;
 }

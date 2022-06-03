@@ -31,6 +31,8 @@ import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
 import { PaginatedCommentsType } from '../comments/gql-types/paginated-comments.type';
 import { TagType } from '../tags/gql-types/tag.type';
 import { TagEntity } from '../tags/entities/tag.entity';
+import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
+import { UserEntity } from '../users/entities/user.entity';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -140,6 +142,14 @@ export class PostsResolver {
   @Query(() => [TagType])
   public async postTags(@Args() dto: PostDto): Promise<TagEntity[]> {
     return this.postsService.postTags(dto.postId);
+  }
+
+  @Public()
+  @Query(() => PaginatedUsersType)
+  public async postLikes(
+    @Args() dto: FilterPostLikesDto,
+  ): Promise<IPaginated<UserEntity>> {
+    return this.postsService.postLikes(dto);
   }
 
   //_____ LOADERS _____//

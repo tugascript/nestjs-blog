@@ -1,4 +1,3 @@
-import { LocalBaseEntity } from '../../common/entities/base.entity';
 import {
   Collection,
   Entity,
@@ -12,9 +11,10 @@ import { PostEntity } from '../../posts/entities/post.entity';
 import { IReply } from '../interfaces/reply.interface';
 import { CommentEntity } from './comment.entity';
 import { ReplyLikeEntity } from './reply-like.entity';
+import { AuthoredEntity } from '../../common/entities/authored.entity';
 
 @Entity({ tableName: 'replies' })
-export class ReplyEntity extends LocalBaseEntity implements IReply {
+export class ReplyEntity extends AuthoredEntity implements IReply {
   @Property({ columnType: 'varchar(350)' })
   @Length(1, 350)
   public content: string;
@@ -24,13 +24,6 @@ export class ReplyEntity extends LocalBaseEntity implements IReply {
     ReplyLikeEntity,
     ReplyEntity
   >(this);
-
-  @ManyToOne({
-    entity: () => UserEntity,
-    onDelete: 'cascade',
-  })
-  @IsNotEmpty()
-  public author!: UserEntity;
 
   @ManyToOne({
     entity: () => PostEntity,

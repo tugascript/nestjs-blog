@@ -19,12 +19,12 @@ import { PostTagEntity } from '../posts/entities/post-tag.entity';
 import { PostLikeEntity } from '../posts/entities/post-like.entity';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { ICountResult } from './interfaces/count-result.interface';
-import { IUser } from '../users/interfaces/user.interface';
 import { CommentLikeEntity } from '../comments/entities/comment-like.entity';
 import { ReplyEntity } from '../comments/entities/reply.entity';
 import { ReplyLikeEntity } from '../comments/entities/reply-like.entity';
 import { IPageResult } from './interfaces/page-result.interface';
 import { ICreation } from '../common/interfaces/creation.interface';
+import { IAuthored } from '../common/interfaces/authored.interface';
 
 @Injectable()
 export class LoadersService {
@@ -630,7 +630,7 @@ export class LoadersService {
    *
    * Gets every author relation.
    */
-  public authorRelationLoader<T extends IBase & { author: IUser }>() {
+  public authorRelationLoader<T extends IAuthored>() {
     return async (data: ILoader<T>[]): Promise<UserEntity[]> => {
       if (data.length === 0) return [];
 
