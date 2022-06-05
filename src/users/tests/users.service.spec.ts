@@ -14,9 +14,9 @@ import { config } from '../../config/config';
 import { MikroOrmConfig } from '../../config/mikroorm.config';
 import { validationSchema } from '../../config/validation';
 import { UploaderModule } from '../../uploader/uploader.module';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../users.service';
 import { UserEntity } from '../entities/user.entity';
-import { UsersCursorEnum } from '../enums/users-cursor.enum';
+import { QueryCursorEnum } from '../../common/enums/query-cursor.enum';
 
 const PASSWORD = 'Ab123456';
 
@@ -68,14 +68,13 @@ describe('UsersService', () => {
         email,
         password1,
       }: RegisterDto) => {
-        const user = usersRepository.create({
+        return usersRepository.create({
           name,
           email,
           username: commonService.generatePointSlug(name),
           password: await hash(password1, 10),
           confirmed: true,
         });
-        return user;
       };
 
       const userArr: UserEntity[] = [];
@@ -99,7 +98,7 @@ describe('UsersService', () => {
       const paginated = await usersService.findUsers({
         search: 'a',
         order: QueryOrderEnum.DESC,
-        cursor: UsersCursorEnum.DATE,
+        cursor: QueryCursorEnum.DATE,
         first: 20,
       });
 

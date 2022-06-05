@@ -22,7 +22,6 @@ import { SeriesModule } from './series/series.module';
 import { TagsModule } from './tags/tags.module';
 import { LoadersModule } from './loaders/loaders.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -56,7 +55,6 @@ import { AdminModule } from './admin/admin.module';
     TagsModule,
     LoadersModule,
     NotificationsModule,
-    AdminModule,
   ],
   providers: [
     {

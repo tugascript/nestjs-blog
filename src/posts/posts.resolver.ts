@@ -33,6 +33,7 @@ import { TagType } from '../tags/gql-types/tag.type';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
 import { UserEntity } from '../users/entities/user.entity';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -150,6 +151,32 @@ export class PostsResolver {
     @Args() dto: FilterPostLikesDto,
   ): Promise<IPaginated<UserEntity>> {
     return this.postsService.postLikes(dto);
+  }
+
+  //_____ ADMIN _____//
+
+  @Mutation(() => PostType)
+  @UseGuards(AdminGuard)
+  public async adminEditPost(
+    @Args('input') input: UpdatePostInput,
+  ): Promise<PostEntity> {
+    return this.postsService.adminEditPost(input);
+  }
+
+  @Mutation(() => PostType)
+  @UseGuards(AdminGuard)
+  public async adminEditPostPicture(
+    @Args('input') input: UpdatePostPictureInput,
+  ): Promise<PostEntity> {
+    return this.postsService.adminEditPostPicture(input);
+  }
+
+  @Mutation(() => LocalMessageType)
+  @UseGuards(AdminGuard)
+  public async adminDeletePost(
+    @Args() dto: PostDto,
+  ): Promise<LocalMessageType> {
+    return this.postsService.adminDeletePost(dto.postId);
   }
 
   //_____ LOADERS _____//

@@ -13,7 +13,7 @@ import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { QueryOrderEnum } from '../common/enums/query-order.enum';
 import { ChangeTypeEnum } from '../common/enums/change-type.enum';
-import { RequiredEntityData } from '@mikro-orm/core';
+import { FilterQuery, RequiredEntityData } from '@mikro-orm/core';
 import { ReplyEntity } from '../comments/entities/reply.entity';
 import { CommentEntity } from '../comments/entities/comment.entity';
 import { PostEntity } from '../posts/entities/post.entity';
@@ -34,67 +34,55 @@ export class NotificationsService {
     private readonly commonService: CommonService,
   ) {}
 
+  private static fillNotification<T extends IAuthored>(
+    entity: T,
+    body: Record<string, any>,
+  ): void {
+    if (entity instanceof ReplyEntity) {
+      body.notificationEntity = NotificationEntityEnum.REPLY;
+      body.reply = entity.id;
+      body.comment = entity.comment.id;
+      body.post = entity.post.id;
+    } else if (entity instanceof CommentEntity) {
+      body.notificationEntity = NotificationEntityEnum.COMMENT;
+      body.comment = entity.id;
+      body.post = entity.post.id;
+    } else if (entity instanceof PostEntity) {
+      body.notificationEntity = NotificationEntityEnum.POST;
+      body.post = entity.id;
+    } else if (entity instanceof SeriesEntity) {
+      body.notificationEntity = NotificationEntityEnum.SERIES;
+      body.series = entity.id;
+    } else {
+      throw new BadRequestException('Invalid entity type');
+    }
+  }
+
   /**
    * Creates App Notification
    *
    * Creates a new generic app notification.
    */
-  public async createAppNotification<T extends IAuthored>(
+  public async createNotification<T extends IAuthored>(
     pubsub: PubSub,
     notificationType: NotificationTypeEnum,
     userId: number,
+    recipientId: number,
     entity: T,
   ): Promise<void> {
+    if (
+      userId === recipientId ||
+      (entity.mute && notificationType !== NotificationTypeEnum.MENTION)
+    ) {
+      return;
+    }
+
     const entityData: RequiredEntityData<NotificationEntity> = {
       notificationType,
       issuer: userId,
+      recipient: recipientId,
     };
-
-    if (entity instanceof ReplyEntity) {
-      entityData.notificationEntity = NotificationEntityEnum.REPLY;
-      entityData.reply = entity.id;
-      entityData.comment = entity.comment.id;
-      entityData.post = entity.post.id;
-
-      switch (notificationType) {
-        case NotificationTypeEnum.REPLY:
-          entityData.recipient = entity.comment.author.id;
-          break;
-        case NotificationTypeEnum.MENTION:
-          entityData.recipient = entity.mention.id;
-          break;
-        case NotificationTypeEnum.LIKE:
-        default:
-          entityData.recipient = entity.author.id;
-          break;
-      }
-    } else if (entity instanceof CommentEntity) {
-      entityData.notificationEntity = NotificationEntityEnum.COMMENT;
-      entityData.comment = entity.id;
-      entityData.post = entity.post.id;
-      entityData.recipient = entity.author.id;
-
-      switch (notificationType) {
-        case NotificationTypeEnum.COMMENT:
-          entityData.recipient = entity.post.id;
-          break;
-        case NotificationTypeEnum.LIKE:
-        default:
-          entityData.recipient = entity.author.id;
-          break;
-      }
-    } else if (entity instanceof PostEntity) {
-      entityData.notificationEntity = NotificationEntityEnum.POST;
-      entityData.post = entity.id;
-      entityData.recipient = entity.author.id;
-    } else if (entity instanceof SeriesEntity) {
-      entityData.notificationEntity = NotificationEntityEnum.SERIES;
-      entityData.series = entity.id;
-      entityData.recipient = entity.author.id;
-    } else {
-      throw new BadRequestException('Invalid entity type');
-    }
-
+    NotificationsService.fillNotification(entity, entityData);
     const notification = this.notificationsRepository.create(entityData);
     await this.commonService.saveEntity(
       this.notificationsRepository,
@@ -160,21 +148,22 @@ export class NotificationsService {
    *
    * Removes notification automatically after like and comment changes.
    */
-  public async removeNotification(
+  public async removeNotification<T extends IAuthored>(
     pubsub: PubSub,
     notificationType: NotificationTypeEnum,
     userId: number,
-    postId: number,
-    commentId?: number,
-    replyId?: number,
+    recipientId: number,
+    entity: T,
   ): Promise<void> {
-    const notification = await this.notificationsRepository.findOne({
+    if (userId === recipientId) return;
+
+    const where: FilterQuery<NotificationEntity> = {
       notificationType,
       issuer: userId,
-      post: postId,
-      comment: commentId,
-      reply: replyId,
-    });
+      recipient: recipientId,
+    };
+    NotificationsService.fillNotification(entity, where);
+    const notification = await this.notificationsRepository.findOne(where);
 
     if (notification) {
       await this.commonService.removeEntity(
@@ -205,7 +194,12 @@ export class NotificationsService {
   ): Promise<IPaginated<NotificationEntity>> {
     const qb = this.notificationsRepository
       .createQueryBuilder(this.notificationAlias)
-      .where({ recipient: userId });
+      .where({ recipient: userId })
+      .leftJoinAndSelect(`${this.notificationAlias}.issuer`, 'u')
+      .leftJoinAndSelect(`${this.notificationAlias}.series`, 's')
+      .leftJoinAndSelect(`${this.notificationAlias}.post`, 'p')
+      .leftJoinAndSelect(`${this.notificationAlias}.comment`, 'c')
+      .leftJoinAndSelect(`${this.notificationAlias}.reply`, 'r');
 
     if (unreadOnly) qb.andWhere({ read: false });
 

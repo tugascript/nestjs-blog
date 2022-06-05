@@ -2,7 +2,9 @@ import {
   Args,
   Context,
   Mutation,
+  Parent,
   Query,
+  ResolveField,
   Resolver,
   Subscription,
 } from '@nestjs/graphql';
@@ -20,6 +22,7 @@ import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
 import { NotificationEntity } from './entities/notification.entity';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { NotificationChangeType } from './gql-types/notification-change.type';
+import { NotificationBodyType } from './gql-types/notification-body.type';
 
 @Resolver(() => NotificationType)
 export class NotificationsResolver {
@@ -68,6 +71,16 @@ export class NotificationsResolver {
   ) {
     return pubsub.subscribe<INotificationChange>(
       uuidV5(user.id.toString(), this.notificationNamespace),
+    );
+  }
+
+  @ResolveField(() => NotificationBodyType)
+  public body(@Parent() notification: NotificationEntity) {
+    return (
+      notification.reply ??
+      notification.comment ??
+      notification.post ??
+      notification.series
     );
   }
 }

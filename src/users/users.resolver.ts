@@ -11,7 +11,6 @@ import { Public } from '../auth/decorators/public.decorator';
 import { LocalMessageType } from '../common/gql-types/message.type';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { GetUserDto } from './dtos/get-user.dto';
-import { GetUsersDto } from './dtos/get-users.dto';
 import { OnlineStatusDto } from './dtos/online-status.dto';
 import { ProfilePictureDto } from './dtos/profile-picture.dto';
 import { UserEntity } from './entities/user.entity';
@@ -21,6 +20,13 @@ import { UsersService } from './users.service';
 import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { PaginatedSeriesType } from 'src/series/gql-types/paginated-series.type';
+import { SearchDto } from '../common/dtos/search.dto';
+import { UserDto } from './dtos/user.dto';
+import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
+import { RoleEnum } from './enums/role.enum';
+import { UseGuards } from '@nestjs/common';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { RoleInput } from './inputs/role.input';
 
 @Resolver(() => UserType)
 export class UsersResolver {
@@ -56,29 +62,67 @@ export class UsersResolver {
 
   @Query(() => UserType)
   public async me(@CurrentUser() userId: number): Promise<UserEntity> {
-    return this.usersService.getUserById(userId);
+    return this.usersService.userById(userId);
   }
 
   //____________________ PUBLIC QUERIES ____________________
-  /*
-        Usefull for social media style apps where user haves descriptions
-        and profiles, I haven't implemented a profile in the user entity
-        but these are just example queries in case you implement one of
-        your own
-      */
 
   @Public()
   @Query(() => UserType)
-  public async getUser(@Args() dto: GetUserDto): Promise<UserEntity> {
-    return this.usersService.getUserByUsername(dto.username);
+  public async userByUsername(@Args() dto: GetUserDto): Promise<UserEntity> {
+    return this.usersService.userByUsername(dto.username);
+  }
+
+  @Public()
+  @Query(() => UserType)
+  public async userById(@Args() dto: UserDto): Promise<UserEntity> {
+    return this.usersService.userById(dto.userId);
   }
 
   @Public()
   @Query(() => PaginatedUsersType)
-  public async findUsers(
-    @Args() dto: GetUsersDto,
+  public async filterUsers(
+    @Args() dto: SearchDto,
   ): Promise<IPaginated<UserEntity>> {
-    return this.usersService.findUsers(dto);
+    return this.usersService.filterUsers(dto);
+  }
+
+  //____________________ ADMIN ____________________
+
+  @Mutation(() => UserType)
+  @UseGuards(AdminGuard)
+  public async adminUpdateUserRole(
+    @Args('input') input: RoleInput,
+  ): Promise<UserEntity> {
+    return this.usersService.adminUpdateUserRole(input);
+  }
+
+  @Mutation(() => UserType)
+  @UseGuards(AdminGuard)
+  public async adminSuspendUser(@Args() dto: UserDto): Promise<UserEntity> {
+    return this.usersService.adminSuspendUser(dto.userId);
+  }
+
+  @Mutation(() => UserType)
+  @UseGuards(AdminGuard)
+  public async adminUnsuspendUser(@Args() dto: UserDto): Promise<UserEntity> {
+    return this.usersService.adminUnsuspendUser(dto.userId);
+  }
+
+  @Mutation(() => UserType)
+  @UseGuards(AdminGuard)
+  public async adminDeleteUserPicture(
+    @Args() dto: UserDto,
+  ): Promise<UserEntity> {
+    return this.usersService.adminDeleteUserPicture(dto.userId);
+  }
+
+  @Mutation(() => LocalMessageType)
+  @UseGuards(AdminGuard)
+  public async adminDeleteUser(
+    @Args() dto: UserDto,
+  ): Promise<LocalMessageType> {
+    return this.usersService.adminDeleteUser(dto.userId);
   }
 
   //____________________ RESOLVE FIELDS ____________________
@@ -86,9 +130,11 @@ export class UsersResolver {
   @ResolveField('email', () => String, { nullable: true })
   public getEmail(
     @Parent() user: UserEntity,
-    @CurrentUser() userId: number,
+    @CurrentUser() accessUser: IAccessPayload,
   ): string | null {
-    return user.id === userId ? user.email : null;
+    return user.id === accessUser.id || accessUser.role === RoleEnum.ADMIN
+      ? user.email
+      : null;
   }
 
   // LOADERS

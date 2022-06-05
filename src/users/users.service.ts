@@ -19,12 +19,13 @@ import { LocalMessageType } from '../common/gql-types/message.type';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { tLikeOperator } from '../config/interfaces/jwt.interface';
 import { UploaderService } from '../uploader/uploader.service';
-import { GetUsersDto } from './dtos/get-users.dto';
 import { OnlineStatusDto } from './dtos/online-status.dto';
 import { ProfilePictureDto } from './dtos/profile-picture.dto';
 import { UserEntity } from './entities/user.entity';
-import { getUserCursor } from './enums/users-cursor.enum';
 import { RatioEnum } from '../common/enums/ratio.enum';
+import { SearchDto } from '../common/dtos/search.dto';
+import { getUserQueryCursor } from '../common/enums/query-cursor.enum';
+import { RoleInput } from './inputs/role.input';
 
 @Injectable()
 export class UsersService {
@@ -94,7 +95,7 @@ export class UsersService {
     userId: number,
     { picture }: ProfilePictureDto,
   ): Promise<UserEntity> {
-    const user = await this.getUserById(userId);
+    const user = await this.userById(userId);
     const toDelete = user.picture;
 
     user.picture = await this.uploaderService.uploadImage(
@@ -112,13 +113,13 @@ export class UsersService {
   /**
    * Update Default Status
    *
-   * Updates the defualt online status of current user
+   * Updates the default online status of current user
    */
   public async updateDefaultStatus(
     userId: number,
     { defaultStatus }: OnlineStatusDto,
   ): Promise<LocalMessageType> {
-    const user = await this.getUserById(userId);
+    const user = await this.userById(userId);
     user.defaultStatus = defaultStatus;
 
     const userUuid = uuidV5(userId.toString(), this.wsNamespace);
@@ -148,7 +149,7 @@ export class UsersService {
     userId: number,
     password: string,
   ): Promise<LocalMessageType> {
-    const user = await this.getUserById(userId);
+    const user = await this.userById(userId);
 
     if (password.length > 1 && !(await compare(password, user.password)))
       throw new BadRequestException('Wrong password!');
@@ -215,22 +216,22 @@ export class UsersService {
   }
 
   /**
-   * Get User By Id
+   * User By ID
    *
    * Gets user by id, usually the current logged-in user
    */
-  public async getUserById(id: number): Promise<UserEntity> {
+  public async userById(id: number): Promise<UserEntity> {
     const user = await this.usersRepository.findOne({ id });
     this.commonService.checkExistence('User', user);
     return user;
   }
 
   /**
-   * Get User By Username
+   * User By Username
    *
    * Gets user by username, usually for the profile (if it exists)
    */
-  public async getUserByUsername(username: string): Promise<UserEntity> {
+  public async userByUsername(username: string): Promise<UserEntity> {
     const user = await this.usersRepository.findOne({ username });
     this.commonService.checkExistence('User', user);
     return user;
@@ -241,13 +242,13 @@ export class UsersService {
    *
    * Search users usernames and returns paginated results
    */
-  public async findUsers({
+  public async filterUsers({
     search,
     order,
     cursor,
     first,
     after,
-  }: GetUsersDto): Promise<IPaginated<UserEntity>> {
+  }: SearchDto): Promise<IPaginated<UserEntity>> {
     const name = 'u';
 
     const qb = this.usersRepository.createQueryBuilder(name).where({
@@ -264,12 +265,60 @@ export class UsersService {
 
     return await this.commonService.queryBuilderPagination(
       name,
-      getUserCursor(cursor),
+      getUserQueryCursor(cursor) as keyof UserEntity,
       first,
       order,
       qb,
       after,
     );
+  }
+
+  //____________________ ADMIN ____________________
+
+  public async adminUpdateUserRole({
+    userId,
+    role,
+  }: RoleInput): Promise<UserEntity> {
+    const user = await this.userById(userId);
+    user.role = role;
+    user.credentials.updateVersion();
+    await this.saveUserToDb(user);
+    return user;
+  }
+
+  public async adminSuspendUser(userId: number): Promise<UserEntity> {
+    const user = await this.userById(userId);
+    user.suspended = true;
+    user.credentials.updateVersion();
+    await this.saveUserToDb(user);
+    return user;
+  }
+
+  public async adminUnsuspendUser(userId: number): Promise<UserEntity> {
+    const user = await this.userById(userId);
+    user.suspended = false;
+    user.credentials.updateVersion();
+    await this.saveUserToDb(user);
+    return user;
+  }
+
+  public async adminDeleteUserPicture(userId: number): Promise<UserEntity> {
+    const user = await this.userById(userId);
+    await this.uploaderService.deleteFile(user.picture);
+    user.picture = null;
+    await this.saveUserToDb(user);
+    return user;
+  }
+
+  /**
+   * Admin Delete User
+   *
+   * Delete a user by ID.
+   */
+  public async adminDeleteUser(userId: number): Promise<LocalMessageType> {
+    const user = await this.userById(userId);
+    await this.commonService.removeEntity(this.usersRepository, user);
+    return new LocalMessageType('User deleted successfully');
   }
 
   //____________________ OTHER ____________________

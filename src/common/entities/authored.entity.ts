@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 import { LocalBaseEntity } from './base.entity';
 import { IAuthored } from '../interfaces/authored.interface';
-import { Entity, ManyToOne } from '@mikro-orm/core';
+import { Entity, ManyToOne, Property } from '@mikro-orm/core';
 import { UserEntity } from '../../users/entities/user.entity';
 import { IsNotEmpty } from 'class-validator';
 
@@ -15,4 +16,7 @@ export abstract class AuthoredEntity
   })
   @IsNotEmpty()
   public author!: UserEntity;
+
+  @Property({ default: false })
+  public mute: boolean = false;
 }

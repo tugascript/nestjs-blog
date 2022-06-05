@@ -27,6 +27,8 @@ import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { FilterRelationDto } from '../../common/dtos/filter-relation.dto';
 import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
 import { UpdateCommentInput } from '../inputs/update-comment.input';
+import { UseGuards } from '@nestjs/common';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @Resolver(() => CommentType)
 export class CommentsResolver {
@@ -100,7 +102,18 @@ export class CommentsResolver {
     );
   }
 
-  //______ LOADERS ______//
+  //_____ ADMIN _____//
+
+  @Mutation(() => LocalMessageType)
+  @UseGuards(AdminGuard)
+  public async adminDeleteComment(
+    @Context('pubsub') pubsub: PubSub,
+    @Args() dto: CommentDto,
+  ): Promise<LocalMessageType> {
+    return this.commentsService.adminDeleteComment(pubsub, dto.commentId);
+  }
+
+  //_____ LOADERS _____//
 
   @ResolveField('replies', () => PaginatedCommentsType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

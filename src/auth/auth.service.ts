@@ -132,6 +132,10 @@ export class AuthService {
     { email, password }: LoginDto,
   ): Promise<IAuthResult | LocalMessageType> {
     const user = await this.usersService.getUserForAuth(email);
+
+    if (user.suspended)
+      throw new UnauthorizedException('Your account is suspended.');
+
     const currentPassword = user.password;
     const { lastPassword, updatedAt } = user.credentials;
     const now = dayjs();

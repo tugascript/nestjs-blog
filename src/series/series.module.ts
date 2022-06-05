@@ -7,6 +7,7 @@ import { TagsModule } from '../tags/tags.module';
 import { SeriesFollowerEntity } from './entities/series-follower.entity';
 import { SeriesTagEntity } from './entities/series-tag.entity';
 import { UsersModule } from '../users/users.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UsersModule } from '../users/users.module';
     ]),
     TagsModule,
     UsersModule,
+    NotificationsModule,
   ],
   providers: [SeriesResolver, SeriesService],
 })

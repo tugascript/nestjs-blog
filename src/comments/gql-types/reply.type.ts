@@ -1,4 +1,3 @@
-import { LocalBaseType } from '../../common/gql-types/base.type';
 import { IReply } from '../interfaces/reply.interface';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { UserType } from '../../users/gql-types/user.type';
@@ -7,12 +6,10 @@ import { PostType } from '../../posts/gql-types/post.type';
 import { CommentType } from './comment.type';
 import { IUser } from '../../users/interfaces/user.interface';
 import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
+import { AuthoredType } from '../../common/gql-types/authored.type';
 
 @ObjectType('Reply')
-export class ReplyType extends LocalBaseType implements IReply {
-  @Field(() => UserType)
-  public author: IUser;
-
+export class ReplyType extends AuthoredType implements IReply {
   @Field(() => CommentType)
   public comment: CommentType;
 

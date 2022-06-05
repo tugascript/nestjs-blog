@@ -24,6 +24,10 @@ import { TagEntity } from '../tags/entities/tag.entity';
 import { UsersService } from '../users/users.service';
 import { UserEntity } from '../users/entities/user.entity';
 import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PubSub } from 'mercurius';
+import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
+import { FileUpload } from 'graphql-upload';
 
 @Injectable()
 export class SeriesService {
@@ -41,6 +45,7 @@ export class SeriesService {
     private readonly commonService: CommonService,
     private readonly uploaderService: UploaderService,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -110,14 +115,7 @@ export class SeriesService {
     { seriesId, picture }: UpdateSeriesPictureInput,
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
-    const toDelete = series.picture;
-    series.picture = await this.uploaderService.uploadImage(
-      userId,
-      picture,
-      RatioEnum.BANNER,
-    );
-    await this.commonService.saveEntity(this.seriesRepository, series);
-    this.uploaderService.deleteFile(toDelete);
+    this.updateSeriesPictureLogic(series, picture);
     return series;
   }
 
@@ -167,6 +165,7 @@ export class SeriesService {
    * Creates a follower for a given series by ID.
    */
   public async followSeries(
+    pubsub: PubSub,
     userId: number,
     seriesId: number,
   ): Promise<SeriesEntity> {
@@ -177,6 +176,13 @@ export class SeriesService {
       follower,
       true,
     );
+    await this.notificationsService.createNotification(
+      pubsub,
+      NotificationTypeEnum.FOLLOW,
+      userId,
+      series.author.id,
+      series,
+    );
     return series;
   }
 
@@ -186,6 +192,7 @@ export class SeriesService {
    * Deletes a follower for a given series by ID.
    */
   public async unfollowSeries(
+    pubsub: PubSub,
     userId: number,
     seriesId: number,
   ): Promise<SeriesEntity> {
@@ -194,6 +201,13 @@ export class SeriesService {
     await this.commonService.removeEntity(
       this.seriesFollowersRepository,
       follower,
+    );
+    await this.notificationsService.removeNotification(
+      pubsub,
+      NotificationTypeEnum.FOLLOW,
+      userId,
+      series.author.id,
+      series,
     );
     return series;
   }
@@ -380,6 +394,35 @@ export class SeriesService {
     return series;
   }
 
+  //_______ FOR ADMIN SERVICE ______
+
+  public async adminDeleteSeries(seriesId: number): Promise<LocalMessageType> {
+    const series = await this.seriesById(seriesId);
+    await this.commonService.removeEntity(this.seriesRepository, series);
+    return new LocalMessageType('Series deleted successfully');
+  }
+
+  public async adminEditSeries({
+    seriesId,
+    title,
+  }: UpdateSeriesInput): Promise<SeriesEntity> {
+    const series = await this.seriesById(seriesId);
+    title = this.commonService.formatTitle(title);
+    series.title = title;
+    series.slug = this.commonService.generateSlug(title);
+    await this.commonService.saveEntity(this.seriesRepository, series);
+    return series;
+  }
+
+  public async adminEditSeriesPicture({
+    seriesId,
+    picture,
+  }: UpdateSeriesPictureInput): Promise<SeriesEntity> {
+    const series = await this.seriesById(seriesId);
+    await this.updateSeriesPictureLogic(series, picture);
+    return series;
+  }
+
   /**
    * Author's Series By ID
    *
@@ -430,5 +473,19 @@ export class SeriesService {
     });
     this.commonService.checkExistence("Series' Tag", tag);
     return tag;
+  }
+
+  private async updateSeriesPictureLogic(
+    series: SeriesEntity,
+    picture: Promise<FileUpload>,
+  ): Promise<void> {
+    const toDelete = series.picture;
+    series.picture = await this.uploaderService.uploadImage(
+      series.author.id,
+      picture,
+      RatioEnum.BANNER,
+    );
+    await this.commonService.saveEntity(this.seriesRepository, series);
+    this.uploaderService.deleteFile(toDelete);
   }
 }

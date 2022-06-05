@@ -43,6 +43,7 @@ export class NotificationEntity
   @ManyToOne({
     entity: () => UserEntity,
     onDelete: 'cascade',
+    eager: true,
   })
   @IsNotEmpty()
   public issuer: UserEntity;
@@ -51,6 +52,7 @@ export class NotificationEntity
     entity: () => SeriesEntity,
     onDelete: 'cascade',
     nullable: true,
+    eager: true,
   })
   public series?: SeriesEntity;
 
@@ -58,20 +60,23 @@ export class NotificationEntity
     entity: () => PostEntity,
     onDelete: 'cascade',
     nullable: true,
+    eager: true,
   })
   public post?: PostEntity;
 
   @ManyToOne({
     entity: () => CommentEntity,
-    onDelete: 'set null',
+    onDelete: 'no action',
     nullable: true,
+    eager: true,
   })
   public comment?: CommentEntity;
 
   @ManyToOne({
     entity: () => ReplyEntity,
-    onDelete: 'set null',
+    onDelete: 'no action',
     nullable: true,
+    eager: true,
   })
   public reply?: ReplyEntity;
 }

@@ -1,4 +1,11 @@
-import { Args, Mutation, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { SeriesService } from './series.service';
 import { CreateSeriesInput } from './inputs/create-series.input';
 import { UpdateSeriesInput } from './inputs/update-series.input';
@@ -25,6 +32,8 @@ import { FilterPostsRelationDto } from './dtos/filter-posts-relation.dto';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
 import { UserEntity } from '../users/entities/user.entity';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { PubSub } from 'mercurius';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -77,18 +86,20 @@ export class SeriesResolver {
 
   @Mutation(() => SeriesType)
   public async followSeries(
+    @Context('pubsub') pubsub: PubSub,
     @CurrentUser() user: IAccessPayload,
     @Args() dto: SeriesDto,
   ): Promise<SeriesEntity> {
-    return this.seriesService.followSeries(user.id, dto.seriesId);
+    return this.seriesService.followSeries(pubsub, user.id, dto.seriesId);
   }
 
   @Mutation(() => SeriesType)
   public async unfollowSeries(
+    @Context('pubsub') pubsub: PubSub,
     @CurrentUser() user: IAccessPayload,
     @Args() dto: SeriesDto,
   ): Promise<SeriesEntity> {
-    return this.seriesService.unfollowSeries(user.id, dto.seriesId);
+    return this.seriesService.unfollowSeries(pubsub, user.id, dto.seriesId);
   }
 
   @UseGuards(PublisherGuard)
@@ -141,6 +152,32 @@ export class SeriesResolver {
     @Args() dto: FilterSeriesFollowersDto,
   ): Promise<IPaginated<UserEntity>> {
     return this.seriesService.seriesFollowers(dto);
+  }
+
+  //_____ ADMIN _____
+
+  @Mutation(() => SeriesType)
+  @UseGuards(AdminGuard)
+  public async adminEditSeries(
+    @Args('input') input: UpdateSeriesInput,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.adminEditSeries(input);
+  }
+
+  @Mutation(() => SeriesType)
+  @UseGuards(AdminGuard)
+  public async adminEditSeriesPicture(
+    @Args('input') input: UpdateSeriesPictureInput,
+  ): Promise<SeriesEntity> {
+    return this.seriesService.adminEditSeriesPicture(input);
+  }
+
+  @Mutation(() => LocalMessageType)
+  @UseGuards(AdminGuard)
+  public async adminDeleteSeries(
+    @Args() dto: SeriesDto,
+  ): Promise<LocalMessageType> {
+    return this.seriesService.adminDeleteSeries(dto.seriesId);
   }
 
   // RESOLVE FIELDS FOR LOADERS

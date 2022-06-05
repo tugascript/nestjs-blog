@@ -28,6 +28,7 @@ import { PostTagEntity } from './entities/post-tag.entity';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
 import { UserEntity } from '../users/entities/user.entity';
+import { FileUpload } from 'graphql-upload';
 
 @Injectable()
 export class PostsService {
@@ -98,15 +99,7 @@ export class PostsService {
     { postId, title, content }: UpdatePostInput,
   ): Promise<PostEntity> {
     const post = await this.authorsPostById(userId, postId);
-
-    if (title) {
-      title = this.commonService.formatTitle(title);
-      post.title = title;
-      post.slug = this.commonService.generateSlug(title);
-    }
-
-    if (content) post.content = content;
-
+    await this.updatePostLogic(post, title, content);
     await this.commonService.saveEntity(this.postsRepository, post);
     return post;
   }
@@ -122,14 +115,7 @@ export class PostsService {
     { postId, picture }: UpdatePostPictureInput,
   ): Promise<PostEntity> {
     const post = await this.authorsPostById(userId, postId);
-    const toDelete = post.picture;
-    post.picture = await this.uploaderService.uploadImage(
-      userId,
-      picture,
-      RatioEnum.BANNER,
-    );
-    await this.commonService.saveEntity(this.postsRepository, post);
-    this.uploaderService.deleteFile(toDelete);
+    await this.updatePostPictureLogic(post, picture);
     return post;
   }
 
@@ -185,12 +171,12 @@ export class PostsService {
       post: postId,
     });
     await this.commonService.saveEntity(this.postLikesRepository, like, true);
-    await this.notificationsService.createAppNotification(
+    await this.notificationsService.createNotification(
       pubsub,
-      NotificationTypeEnum.POST_LIKE,
+      NotificationTypeEnum.LIKE,
       userId,
       post.author.id,
-      postId,
+      post,
     );
     return post;
   }
@@ -210,10 +196,10 @@ export class PostsService {
     await this.commonService.removeEntity(this.postLikesRepository, like);
     await this.notificationsService.removeNotification(
       pubsub,
-      NotificationTypeEnum.POST_LIKE,
+      NotificationTypeEnum.LIKE,
       userId,
       post.author.id,
-      postId,
+      post,
     );
     return post;
   }
@@ -381,6 +367,34 @@ export class PostsService {
     );
   }
 
+  //_____ FOR ADMIN _____
+
+  public async adminEditPost({
+    postId,
+    content,
+    title,
+  }: UpdatePostInput): Promise<PostEntity> {
+    const post = await this.postById(postId);
+    await this.updatePostLogic(post, title, content);
+    return post;
+  }
+
+  public async adminEditPostPicture({
+    postId,
+    picture,
+  }: UpdatePostPictureInput): Promise<PostEntity> {
+    const post = await this.postById(postId);
+    await this.updatePostPictureLogic(post, picture);
+    return post;
+  }
+
+  public async adminDeletePost(postId: number): Promise<LocalMessageType> {
+    const post = await this.postById(postId);
+    await this.commonService.removeEntity(this.postsRepository, post);
+    this.uploaderService.deleteFile(post.picture);
+    return new LocalMessageType('Post deleted successfully');
+  }
+
   /**
    * Author's Post By ID
    *
@@ -431,5 +445,35 @@ export class PostsService {
     });
     this.commonService.checkExistence('Post Tag', postTag);
     return postTag;
+  }
+
+  private async updatePostLogic(
+    post: PostEntity,
+    title?: string,
+    content?: string,
+  ): Promise<void> {
+    if (title) {
+      title = this.commonService.formatTitle(title);
+      post.title = title;
+      post.slug = this.commonService.generateSlug(title);
+    }
+
+    if (content) post.content = content;
+
+    await this.commonService.saveEntity(this.postsRepository, post);
+  }
+
+  private async updatePostPictureLogic(
+    post: PostEntity,
+    picture: Promise<FileUpload>,
+  ): Promise<void> {
+    const toDelete = post.picture;
+    post.picture = await this.uploaderService.uploadImage(
+      post.author.id,
+      picture,
+      RatioEnum.BANNER,
+    );
+    await this.commonService.saveEntity(this.postsRepository, post);
+    this.uploaderService.deleteFile(toDelete);
   }
 }

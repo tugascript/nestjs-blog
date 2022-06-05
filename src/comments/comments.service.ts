@@ -71,12 +71,12 @@ export class CommentsService {
       content: profanity.censor(content, CensorType.AllVowels),
     });
     await this.commonService.saveEntity(this.commentsRepository, comment, true);
-    await this.notificationsService.createAppNotification(
+    await this.notificationsService.createNotification(
       pubsub,
       NotificationTypeEnum.COMMENT,
       userId,
-      postId,
-      comment.id,
+      post.author.id,
+      comment,
     );
     this.publishCommentChange(pubsub, ChangeTypeEnum.NEW, comment);
     return comment;
@@ -110,10 +110,9 @@ export class CommentsService {
     userId: number,
     commentId: number,
   ): Promise<LocalMessageType> {
-    const comment = await this.authorsCommentById(userId, commentId);
-
-    this.publishCommentChange(pubsub, ChangeTypeEnum.DELETE, comment);
-    return new LocalMessageType('Comment deleted successfully');
+    const comment = await this.authorsCommentById(userId, commentId, true);
+    await this.commonService.removeEntity(this.commentsRepository, comment);
+    return await this.deleteCommentLogic(pubsub, comment);
   }
 
   /**
@@ -136,12 +135,12 @@ export class CommentsService {
       like,
       true,
     );
-    await this.notificationsService.createAppNotification(
+    await this.notificationsService.createNotification(
       pubsub,
-      NotificationTypeEnum.COMMENT_LIKE,
+      NotificationTypeEnum.LIKE,
       userId,
-      comment.post.id,
-      comment.id,
+      comment.author.id,
+      comment,
     );
     this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, comment);
     return comment;
@@ -162,10 +161,10 @@ export class CommentsService {
     await this.commonService.removeEntity(this.commentLikesRepository, like);
     await this.notificationsService.removeNotification(
       pubsub,
-      NotificationTypeEnum.COMMENT_LIKE,
+      NotificationTypeEnum.LIKE,
       userId,
-      comment.post.id,
-      comment.id,
+      comment.author.id,
+      comment,
     );
     this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, comment);
     return comment;
@@ -213,21 +212,30 @@ export class CommentsService {
       author: userId,
       comment,
     });
+    let recipientId = comment.author.id;
+    let notificationType = NotificationTypeEnum.REPLY;
+    let skip = false;
 
     if (replyId) {
       const parentReply = await this.replyByIds(commentId, replyId);
       reply.mention = parentReply.author;
+      recipientId = parentReply.author.id;
+      notificationType = NotificationTypeEnum.MENTION;
+      skip = reply.mute;
     }
 
     await this.commonService.saveEntity(this.repliesRepository, reply, true);
-    await this.notificationsService.createAppNotification(
-      pubsub,
-      NotificationTypeEnum.REPLY,
-      userId,
-      comment.post.id,
-      comment.id,
-      reply.id,
-    );
+
+    if (!skip) {
+      await this.notificationsService.createNotification(
+        pubsub,
+        notificationType,
+        userId,
+        recipientId,
+        reply,
+      );
+    }
+
     this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, comment);
     this.publishReplyChange(pubsub, ChangeTypeEnum.NEW, reply);
     return reply;
@@ -266,18 +274,7 @@ export class CommentsService {
       replyId,
       true,
     );
-    await this.commonService.removeEntity(this.repliesRepository, reply);
-    await this.notificationsService.removeNotification(
-      pubsub,
-      NotificationTypeEnum.REPLY,
-      userId,
-      reply.post.id,
-      reply.comment.id,
-      reply.id,
-    );
-    this.publishReplyChange(pubsub, ChangeTypeEnum.DELETE, reply);
-    this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, reply.comment);
-    return new LocalMessageType('Reply deleted successfully');
+    return await this.deleteReplyLogic(pubsub, reply);
   }
 
   /**
@@ -296,13 +293,12 @@ export class CommentsService {
       reply,
     });
     await this.commonService.saveEntity(this.replyLikesRepository, like, true);
-    await this.notificationsService.createAppNotification(
+    await this.notificationsService.createNotification(
       pubsub,
-      NotificationTypeEnum.REPLY_LIKE,
+      NotificationTypeEnum.LIKE,
       userId,
-      reply.post.id,
-      reply.comment.id,
-      reply.id,
+      reply.author.id,
+      reply,
     );
     this.publishReplyChange(pubsub, ChangeTypeEnum.UPDATE, reply);
     return reply;
@@ -323,11 +319,10 @@ export class CommentsService {
     await this.commonService.removeEntity(this.replyLikesRepository, like);
     await this.notificationsService.removeNotification(
       pubsub,
-      NotificationTypeEnum.REPLY_LIKE,
+      NotificationTypeEnum.LIKE,
       userId,
-      reply.post.id,
-      reply.comment.id,
-      reply.id,
+      reply.author.id,
+      reply,
     );
     this.publishReplyChange(pubsub, ChangeTypeEnum.UPDATE, reply);
     return reply;
@@ -359,6 +354,24 @@ export class CommentsService {
     );
   }
 
+  //_____ ADMIN _____//
+
+  public async adminDeleteComment(
+    pubsub: PubSub,
+    commentId: number,
+  ): Promise<LocalMessageType> {
+    const comment = await this.commentById(commentId);
+    return await this.deleteCommentLogic(pubsub, comment);
+  }
+
+  public async adminDeleteReply(
+    pubsub: PubSub,
+    { commentId, replyId }: ReplyDto,
+  ): Promise<LocalMessageType> {
+    const reply = await this.replyByIds(commentId, replyId);
+    return await this.deleteReplyLogic(pubsub, reply);
+  }
+
   /**
    * Author's Comment By ID
    *
@@ -367,11 +380,15 @@ export class CommentsService {
   private async authorsCommentById(
     userId: number,
     commentId: number,
+    populate = false,
   ): Promise<CommentEntity> {
-    const comment = await this.commentsRepository.findOne({
-      author: userId,
-      id: commentId,
-    });
+    const comment = await this.commentsRepository.findOne(
+      {
+        author: userId,
+        id: commentId,
+      },
+      populate && { populate: ['post'] },
+    );
     this.commonService.checkExistence('Comment', comment);
     return comment;
   }
@@ -494,5 +511,51 @@ export class CommentsService {
         replyChange: this.commonService.generateChange(reply, changeType, 'id'),
       },
     });
+  }
+
+  private async deleteCommentLogic(
+    pubsub: PubSub,
+    comment: CommentEntity,
+  ): Promise<LocalMessageType> {
+    await this.commonService.removeEntity(this.commentsRepository, comment);
+    await this.notificationsService.removeNotification(
+      pubsub,
+      NotificationTypeEnum.COMMENT,
+      comment.author.id,
+      comment.post.author.id,
+      comment,
+    );
+    this.publishCommentChange(pubsub, ChangeTypeEnum.DELETE, comment);
+    return new LocalMessageType('Comment deleted successfully');
+  }
+
+  private async deleteReplyLogic(
+    pubsub: PubSub,
+    reply: ReplyEntity,
+  ): Promise<LocalMessageType> {
+    await this.commonService.removeEntity(this.repliesRepository, reply);
+    const userId = reply.author.id;
+
+    if (reply.mention) {
+      await this.notificationsService.removeNotification(
+        pubsub,
+        NotificationTypeEnum.MENTION,
+        userId,
+        reply.mention.id,
+        reply,
+      );
+    } else {
+      await this.notificationsService.removeNotification(
+        pubsub,
+        NotificationTypeEnum.REPLY,
+        userId,
+        reply.comment.id,
+        reply,
+      );
+    }
+
+    this.publishReplyChange(pubsub, ChangeTypeEnum.DELETE, reply);
+    this.publishCommentChange(pubsub, ChangeTypeEnum.UPDATE, reply.comment);
+    return new LocalMessageType('Reply deleted successfully');
   }
 }

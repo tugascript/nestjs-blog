@@ -27,6 +27,8 @@ import { ReplyDto } from '../dtos/reply.dto';
 import { IReplyChange } from '../interfaces/reply-change.interface';
 import { PaginatedRepliesType } from '../gql-types/paginated-replies.type';
 import { FilterRepliesDto } from '../dtos/filter-replies.dto';
+import { UseGuards } from '@nestjs/common';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 
 @Resolver(() => ReplyType)
 export class RepliesResolver {
@@ -100,7 +102,18 @@ export class RepliesResolver {
     );
   }
 
-  //______ LOADERS ______//
+  //_____ ADMIN _____//
+
+  @Mutation(() => LocalMessageType)
+  @UseGuards(AdminGuard)
+  public async adminDeleteReply(
+    @Context('pubsub') pubsub: PubSub,
+    @Args() dto: ReplyDto,
+  ) {
+    return this.commentsService.adminDeleteReply(pubsub, dto);
+  }
+
+  //_____ LOADERS _____//
 
   @ResolveField('likes', () => PaginatedUsersType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
