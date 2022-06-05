@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UpdateTagDto } from './dtos/update-tag.dto';
+import { UpdateTagInput } from './inputs/update-tag.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { TagEntity } from './entities/tag.entity';
 import { EntityRepository } from '@mikro-orm/postgresql';
@@ -41,7 +41,7 @@ export class TagsService {
    */
   public async updateTag(
     userId: number,
-    { tagId, name }: UpdateTagDto,
+    { tagId, name }: UpdateTagInput,
   ): Promise<TagEntity> {
     const tag = await this.tagById(userId, tagId);
     tag.name = this.commonService.formatTitle(name);
@@ -101,9 +101,23 @@ export class TagsService {
    *
    * Read single CRUD action for Tags.
    */
-  public tagById(userId: number, tagId: number): Promise<TagEntity> {
-    const tag = this.tagsRepository.findOne({ id: tagId, author: userId });
+  public async tagById(userId: number, tagId: number): Promise<TagEntity> {
+    const tag = await this.tagsRepository.findOne({
+      id: tagId,
+      author: userId,
+    });
     this.commonService.checkExistence('Tag', tag);
+    return tag;
+  }
+
+  public async adminEditTag({
+    tagId,
+    name,
+  }: UpdateTagInput): Promise<TagEntity> {
+    const tag = await this.tagsRepository.findOne({ id: tagId });
+    this.commonService.checkExistence('Tag', tag);
+    tag.name = this.commonService.formatTitle(name);
+    await this.commonService.saveEntity(this.tagsRepository, tag);
     return tag;
   }
 }
