@@ -12,7 +12,7 @@ registerEnumType(QueryCursorEnum, {
 });
 
 export const getQueryCursor = (cursor: QueryCursorEnum): keyof IExtendedBase =>
-  cursor === QueryCursorEnum.ALPHA ? 'id' : 'slug';
+  cursor === QueryCursorEnum.DATE ? 'id' : 'slug';
 
 export const getUserQueryCursor = (cursor: QueryCursorEnum): keyof IUser =>
-  cursor === QueryCursorEnum.ALPHA ? 'id' : 'username';
+  cursor === QueryCursorEnum.DATE ? 'id' : 'username';

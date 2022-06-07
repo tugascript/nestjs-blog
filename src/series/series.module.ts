@@ -21,5 +21,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   providers: [SeriesResolver, SeriesService],
+  exports: [SeriesService],
 })
 export class SeriesModule {}

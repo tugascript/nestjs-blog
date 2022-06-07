@@ -1,13 +1,20 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UpdateTagInput } from './inputs/update-tag.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { TagEntity } from './entities/tag.entity';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { CommonService } from '../common/common.service';
 import { LocalMessageType } from '../common/gql-types/message.type';
+import { Knex } from 'knex';
 
 @Injectable()
 export class TagsService {
+  private readonly tagAlias = 't';
+
   constructor(
     @InjectRepository(TagEntity)
     private readonly tagsRepository: EntityRepository<TagEntity>,
@@ -80,24 +87,41 @@ export class TagsService {
   /**
    * Find Tags By Ids
    *
-   * Finds tag of the current user given an array of ids.
+   * Finds tag of the current user by an array of ids.
    */
   public async findTagsByIds(
     userId: number,
     ids: number[],
   ): Promise<TagEntity[]> {
     const tags = await this.tagsRepository.find({
-      author: userId,
       id: {
         $in: ids,
       },
+      author: userId,
     });
 
-    if (tags.length !== ids.length) {
-      throw new BadRequestException('One or more tags do not exist');
-    }
+    if (tags.length !== ids.length)
+      throw new NotFoundException('One or more tags were not found');
 
     return tags;
+  }
+
+  /**
+   * Find Tags By Ids Query
+   *
+   * Find tags by a knex sub query.
+   */
+  public async findTagsByIdsQuery(
+    query: Knex.QueryBuilder,
+  ): Promise<TagEntity[]> {
+    return await this.tagsRepository
+      .createQueryBuilder(this.tagAlias)
+      .where({
+        id: {
+          $in: query,
+        },
+      })
+      .getResult();
   }
 
   /**

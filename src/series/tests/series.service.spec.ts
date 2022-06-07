@@ -28,6 +28,7 @@ import { PubSub } from 'mercurius';
 import { UploaderService } from '../../uploader/uploader.service';
 import { QueryCursorEnum } from '../../common/enums/query-cursor.enum';
 import { QueryOrderEnum } from '../../common/enums/query-order.enum';
+import { LocalMessageType } from '../../common/gql-types/message.type';
 
 class MockPubSub implements PubSub {
   public publish = jest.fn();
@@ -48,6 +49,9 @@ const file: FileUpload = {
 
 const picture = (): Promise<FileUpload> =>
   new Promise<FileUpload>((resolve) => resolve(file));
+
+const fakeName = (): string =>
+  `${faker.name.findName()} ${uuidV4().substring(0, 4)}`;
 
 describe('SeriesService', () => {
   let seriesService: SeriesService,
@@ -140,13 +144,14 @@ describe('SeriesService', () => {
     let seriesId: number;
     it('should create a new series', async () => {
       const tagIds: number[] = [];
+
       for (let i = 0; i < 5; i++) {
-        const name = `${faker.name.findName()} ${uuidV4().substring(0, 4)}`;
+        const name = fakeName();
         const tag = await tagsService.createTag(userId, name);
         tagIds.push(tag.id);
       }
 
-      const title = `${faker.name.findName()} ${uuidV4().substring(0, 4)}`;
+      const title = fakeName();
       const series = await seriesService.createSeries(userId, {
         title,
         picture: picture(),
@@ -155,13 +160,20 @@ describe('SeriesService', () => {
       expect(series).toBeInstanceOf(SeriesEntity);
       expect(series.title).toBe(commonService.formatTitle(title));
       seriesId = series.id;
+      await expect(
+        seriesService.createSeries(userId, {
+          title,
+          picture: picture(),
+          tagIds,
+        }),
+      ).rejects.toThrowError();
     });
 
     let seriesSlug: string;
     it('Update Series', async () => {
       const series = await seriesService.seriesById(seriesId);
       const oldTitle = series.title;
-      const title = `${faker.name.findName()} ${uuidV4().substring(0, 4)}`;
+      const title = fakeName();
       const updatedSeries = await seriesService.updateSeries(userId, {
         seriesId,
         title,
@@ -262,9 +274,7 @@ describe('SeriesService', () => {
       const seriesArr: SeriesEntity[] = [];
 
       for (let i = 0; i < 15; i++) {
-        const title = commonService.formatTitle(
-          `${faker.name.findName()} ${uuidV4().substring(0, 4)}`,
-        );
+        const title = commonService.formatTitle(fakeName());
         seriesArr.push(
           seriesRepository.create({
             title,
@@ -336,6 +346,23 @@ describe('SeriesService', () => {
       expect(filteredSeries2.previousCount).toBe(5);
       expect(filteredSeries2.pageInfo.hasNextPage).toBe(false);
       expect(filteredSeries2.pageInfo.hasPreviousPage).toBe(true);
+    });
+
+    it('Get Series Tags', async () => {
+      const series = await seriesRepository.findOne(
+        { id: seriesId },
+        { populate: ['tags'] },
+      );
+      const tagCount = series.tags.count();
+      const tags = await seriesService.seriesTags(seriesId);
+      expect(tags.length).toBe(tagCount);
+    });
+
+    it('Delete Series', async () => {
+      const message = await seriesService.deleteSeries(userId, seriesId);
+      expect(message).toBeInstanceOf(LocalMessageType);
+      expect(message.message).toBe('Series deleted successfully');
+      await expect(seriesService.seriesById(seriesId)).rejects.toThrowError();
     });
   });
 

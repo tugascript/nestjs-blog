@@ -32,11 +32,13 @@ import { PubSub } from 'mercurius';
 import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
 import { FileUpload } from 'graphql-upload';
 import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
+import { Knex } from 'knex';
 
 @Injectable()
 export class SeriesService {
   private readonly seriesAlias = 's';
   private readonly seriesFollowersAlias = 'sf';
+  private readonly seriesTagsAlias = 'st';
 
   constructor(
     @InjectRepository(SeriesEntity)
@@ -62,6 +64,11 @@ export class SeriesService {
     { title, picture, tagIds }: CreateSeriesInput,
   ) {
     title = this.commonService.formatTitle(title);
+    const count = await this.seriesRepository.count({ title, author: userId });
+
+    if (count > 0)
+      throw new BadRequestException('Series with this title already exists.');
+
     const series = await this.seriesRepository.create({
       title,
       slug: this.commonService.generateSlug(title),
@@ -140,7 +147,8 @@ export class SeriesService {
       tag: tagId,
     });
 
-    if (count > 0) throw new BadRequestException('Tag already added to series');
+    if (count > 0)
+      throw new BadRequestException('Tag already added to series.');
 
     const seriesTag = await this.seriesTagsRepository.create({
       series,
@@ -353,14 +361,10 @@ export class SeriesService {
    * Gets the tags of a series by ID.
    */
   public async seriesTags(seriesId: number): Promise<TagEntity[]> {
-    const series = await this.seriesWithTags(seriesId);
-    const ids: number[] = [];
-
-    for (const tag of series.tags) {
-      ids.push(tag.tag.id);
-    }
-
-    return await this.tagsService.findTagsByIds(series.author.id, ids);
+    await this.checkSeriesExistence(seriesId);
+    return await this.tagsService.findTagsByIdsQuery(
+      this.seriesTagsQuery(seriesId),
+    );
   }
 
   public async seriesFollowers({
@@ -369,10 +373,7 @@ export class SeriesService {
     after,
     order,
   }: FilterSeriesFollowersDto): Promise<IPaginated<UserEntity>> {
-    const count = await this.seriesRepository.count({ id: seriesId });
-
-    if (count === 0) throw new NotFoundException('Series not found');
-
+    await this.checkSeriesExistence(seriesId);
     const followersQuery = this.seriesFollowersRepository
       .createQueryBuilder(this.seriesFollowersAlias)
       .select(`${this.seriesFollowersAlias}.user_id`)
@@ -393,18 +394,9 @@ export class SeriesService {
     );
   }
 
-  /**
-   * Series With Tags
-   *
-   * Fetch series by ID with a left join for tags.
-   */
-  public async seriesWithTags(seriesId: number): Promise<SeriesEntity> {
-    const series = await this.seriesRepository.findOne(
-      { id: seriesId },
-      { populate: ['tags'] },
-    );
-    this.commonService.checkExistence('Series', series);
-    return series;
+  public async checkSeriesExistence(seriesId: number): Promise<void> {
+    const count = await this.seriesRepository.count({ id: seriesId });
+    if (count === 0) throw new NotFoundException('Series not found');
   }
 
   //_______ FOR ADMIN SERVICE ______
@@ -434,6 +426,19 @@ export class SeriesService {
     const series = await this.seriesById(seriesId);
     await this.updateSeriesPictureLogic(series, picture);
     return series;
+  }
+
+  /**
+   * Series' Tags Query
+   *
+   * Gets the tag IDS knex sub query for a given series.
+   */
+  public seriesTagsQuery(seriesId: number): Knex.QueryBuilder {
+    return this.seriesTagsRepository
+      .createQueryBuilder(this.seriesTagsAlias)
+      .select(`${this.seriesTagsAlias}.tag_id`)
+      .where({ series: seriesId })
+      .getKnexQuery();
   }
 
   /**

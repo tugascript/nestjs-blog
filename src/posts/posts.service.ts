@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePostInput } from './inputs/create-post.input';
 import { UpdatePostInput } from './inputs/update-post.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -34,6 +38,7 @@ import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 export class PostsService {
   private readonly postAlias = 'p';
   private readonly postLikesAlias = 'pl';
+  private readonly postTagsAlias = 'pt';
 
   constructor(
     @InjectRepository(PostEntity)
@@ -60,10 +65,19 @@ export class PostsService {
     { title, picture, tagIds, content }: CreatePostInput,
   ): Promise<PostEntity> {
     title = this.commonService.formatTitle(title);
+    const count = await this.postsRepository.count({
+      title,
+      author: userId,
+    });
+
+    if (count > 0)
+      throw new BadRequestException('Post with this title already exists.');
+
     const post = await this.postsRepository.create({
       title,
       content,
       slug: this.commonService.generateSlug(title),
+      author: userId,
     });
     post.picture = await this.uploaderService.uploadImage(
       userId,
@@ -131,6 +145,10 @@ export class PostsService {
   ): Promise<PostEntity> {
     const post = await this.authorsPostById(userId, postId);
     const tag = await this.tagsService.tagById(userId, tagId);
+    const count = await this.postTagsRepository.count({ tag, post });
+
+    if (count > 0) throw new BadRequestException('Tag already added to post.');
+
     const postTag = this.postTagsRepository.create({
       tag,
       post,
@@ -166,6 +184,14 @@ export class PostsService {
     postId: number,
   ): Promise<PostEntity> {
     const post = await this.postById(postId);
+    const count = await this.postLikesRepository.count({
+      post,
+      user: userId,
+    });
+
+    if (count > 0)
+      throw new BadRequestException('You already liked this post.');
+
     const like = this.postLikesRepository.create({
       user: userId,
       post: postId,
@@ -295,21 +321,14 @@ export class PostsService {
     first,
     after,
   }: FilterSeriesPostDto): Promise<IPaginated<PostEntity>> {
-    const series = await this.seriesService.seriesWithTags(seriesId);
-    const tags = series.tags.getItems();
-    const tagIds: number[] = [];
-
-    for (let i = 0; i < tags.length; i++) {
-      tagIds.push(tags[i].tag.id);
-    }
-
+    await this.seriesService.checkSeriesExistence(seriesId);
     const qb = this.postsRepository
       .createQueryBuilder(this.postAlias)
       .leftJoin(`${this.postAlias}.tags`, 't')
       .where({
         tags: {
           tag: {
-            $in: tagIds,
+            $in: this.seriesService.seriesTagsQuery(seriesId),
           },
         },
       });
@@ -325,18 +344,13 @@ export class PostsService {
   }
 
   public async postTags(postId: number): Promise<TagEntity[]> {
-    const post = await this.postsRepository.findOne(
-      { id: postId },
-      { populate: ['tags'] },
-    );
-    this.commonService.checkExistence('Post', post);
-    const ids: number[] = [];
-
-    for (const postTag of post.tags) {
-      ids.push(postTag.tag.id);
-    }
-
-    return await this.tagsService.findTagsByIds(post.author.id, ids);
+    await this.checkPostExistence(postId);
+    const idQuery = this.postTagsRepository
+      .createQueryBuilder(this.postTagsAlias)
+      .select(`${this.postTagsAlias}.tag_id`)
+      .where({ post: postId })
+      .getKnexQuery();
+    return await this.tagsService.findTagsByIdsQuery(idQuery);
   }
 
   public async postLikes({
@@ -365,6 +379,11 @@ export class PostsService {
       qb,
       after,
     );
+  }
+
+  public async checkPostExistence(postId: number): Promise<void> {
+    const count = await this.postsRepository.count({ id: postId });
+    if (count === 0) throw new NotFoundException('Post not found');
   }
 
   //_____ FOR ADMIN _____
