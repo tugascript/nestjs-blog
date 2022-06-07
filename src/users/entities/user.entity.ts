@@ -24,10 +24,13 @@ import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { CredentialsEmbeddable } from '../embeddables/credentials.embeddable';
 import { OnlineStatusEnum } from '../enums/online-status.enum';
 import { RoleEnum } from '../enums/role.enum';
-import { IUser } from '../interfaces/user.interface';
 import { PostLikeEntity } from '../../posts/entities/post-like.entity';
 import { SeriesFollowerEntity } from '../../series/entities/series-follower.entity';
 import { CommentLikeEntity } from '../../comments/entities/comment-like.entity';
+import { IUser } from '../interfaces/user.interface';
+import { PostEntity } from '../../posts/entities/post.entity';
+import { CommentEntity } from '../../comments/entities/comment.entity';
+import { ReplyEntity } from '../../comments/entities/reply.entity';
 
 @Entity({ tableName: 'users' })
 export class UserEntity extends LocalBaseEntity implements IUser {
@@ -130,4 +133,20 @@ export class UserEntity extends LocalBaseEntity implements IUser {
   @OneToMany(() => CommentLikeEntity, (l) => l.user)
   public likedComments: Collection<CommentLikeEntity, UserEntity> =
     new Collection<CommentLikeEntity, UserEntity>(this);
+
+  @OneToMany(() => PostEntity, (p) => p.author)
+  public writtenPosts: Collection<PostEntity, UserEntity> = new Collection<
+    PostEntity,
+    UserEntity
+  >(this);
+
+  @OneToMany(() => CommentEntity, (c) => c.author)
+  public writtenComments: Collection<CommentEntity, UserEntity> =
+    new Collection<CommentEntity, UserEntity>(this);
+
+  @OneToMany(() => ReplyEntity, (r) => r.author)
+  public writtenReplies: Collection<ReplyEntity, UserEntity> = new Collection<
+    ReplyEntity,
+    UserEntity
+  >(this);
 }

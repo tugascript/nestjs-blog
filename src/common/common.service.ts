@@ -26,6 +26,48 @@ export class CommonService {
   //-------------------- Cursor Pagination --------------------
   private readonly buff = Buffer;
 
+  private static getOrderBy<T>(
+    cursor: keyof T,
+    order: QueryOrderEnum,
+    innerCursor?: string,
+  ): Record<string, QueryOrderEnum | Record<string, QueryOrderEnum>> {
+    return innerCursor
+      ? {
+          [cursor]: {
+            [innerCursor]: order,
+          },
+        }
+      : {
+          [cursor]: order,
+        };
+  }
+
+  /**
+   * Get Filters
+   *
+   * Gets the where clause filter logic for the query builder pagination
+   */
+  private static getFilters<T>(
+    cursor: keyof T,
+    decoded: string | number,
+    order: tOrderEnum | tOppositeOrder,
+    innerCursor?: string,
+  ): FilterQuery<Dictionary<T>> {
+    return innerCursor
+      ? {
+          [cursor]: {
+            [innerCursor]: {
+              [order]: decoded,
+            },
+          },
+        }
+      : {
+          [cursor]: {
+            [order]: decoded,
+          },
+        };
+  }
+
   /**
    * Paginate
    *
@@ -66,6 +108,8 @@ export class CommonService {
     return pages;
   }
 
+  //-------------------- Notification Generation --------------------
+
   /**
    * Decode Cursor
    *
@@ -88,6 +132,8 @@ export class CommonService {
     return str;
   }
 
+  //-------------------- String Formatting --------------------
+
   /**
    * Query Builder Pagination
    *
@@ -104,6 +150,7 @@ export class CommonService {
     innerCursor?: string,
   ): Promise<IPaginated<T>> {
     const strCursor = String(cursor); // because of runtime issues
+    const aliasCursor = `${alias}.${strCursor}`;
     let prevCount = 0;
 
     if (after) {
@@ -111,21 +158,23 @@ export class CommonService {
       const oppositeOd = getOppositeOrder(order);
       const tempQb = qb.clone();
       tempQb.andWhere(
-        this.getFilters(cursor, decoded, oppositeOd, innerCursor),
+        CommonService.getFilters(cursor, decoded, oppositeOd, innerCursor),
       );
-      prevCount = await tempQb.count(`${alias}.${strCursor}`, true);
+      prevCount = await tempQb.count(aliasCursor);
 
       const normalOd = getQueryOrder(order);
-      qb.andWhere(this.getFilters(cursor, decoded, normalOd, innerCursor));
+      qb.andWhere(
+        CommonService.getFilters(cursor, decoded, normalOd, innerCursor),
+      );
     }
 
     const cqb = qb.clone();
     const [count, entities]: [number, T[]] = await this.throwInternalError(
       Promise.all([
-        cqb.count(`${alias}.${strCursor}`, true),
+        cqb.count(aliasCursor),
         qb
           .select(`${alias}.*`)
-          .orderBy(this.getOrderBy(cursor, order, innerCursor))
+          .orderBy(CommonService.getOrderBy(cursor, order, innerCursor))
           .limit(first)
           .getResult(),
       ]),
@@ -140,8 +189,6 @@ export class CommonService {
       innerCursor,
     );
   }
-
-  //-------------------- Notification Generation --------------------
 
   /**
    * Generate Change
@@ -159,8 +206,6 @@ export class CommonService {
       type: changeType,
     };
   }
-
-  //-------------------- String Formatting --------------------
 
   /**
    * Format Title
@@ -188,6 +233,8 @@ export class CommonService {
       .toLowerCase()}%`;
   }
 
+  //-------------------- Entity Validations --------------------
+
   /**
    * Generate Point Slug
    *
@@ -209,8 +256,6 @@ export class CommonService {
     });
   }
 
-  //-------------------- Entity Validations --------------------
-
   /**
    * Check Existence
    *
@@ -225,19 +270,21 @@ export class CommonService {
    *
    * Validates an entity with the class-validator library
    */
-  public async validateEntity(entity: Dictionary<any>): Promise<void> {
+  public async validateEntity(entity: Dictionary): Promise<void> {
     const errors = await validate(entity);
 
     if (errors.length > 0)
       throw new BadRequestException('Entity validation failed');
   }
 
+  //-------------------- Error Handling --------------------
+
   /**
    * Save Entity
    *
    * Validates, saves and flushes entity into the DB
    */
-  public async saveEntity<T = Dictionary<any>>(
+  public async saveEntity<T = Dictionary>(
     repo: EntityRepository<T>,
     entity: T,
     isNew = false,
@@ -254,14 +301,14 @@ export class CommonService {
    *
    * Removes an entity from the DB.
    */
-  public async removeEntity<T = Dictionary<any>>(
+  public async removeEntity<T = Dictionary>(
     repo: EntityRepository<T>,
     entity: T,
   ): Promise<void> {
     await this.throwInternalError(repo.removeAndFlush(entity));
   }
 
-  //-------------------- Error Handling --------------------
+  //-------------------- Private Methods --------------------
 
   /**
    * Throw Duplicate Error
@@ -291,8 +338,6 @@ export class CommonService {
       throw new InternalServerErrorException(error);
     }
   }
-
-  //-------------------- Private Methods --------------------
 
   /**
    * Create Edge
@@ -335,47 +380,5 @@ export class CommonService {
     }
 
     return this.buff.from(str, 'utf-8').toString('base64');
-  }
-
-  private getOrderBy<T>(
-    cursor: keyof T,
-    order: QueryOrderEnum,
-    innerCursor?: string,
-  ): Record<string, QueryOrderEnum | Record<string, QueryOrderEnum>> {
-    return innerCursor
-      ? {
-          [cursor]: {
-            [innerCursor]: order,
-          },
-        }
-      : {
-          [cursor]: order,
-        };
-  }
-
-  /**
-   * Get Filters
-   *
-   * Gets the where clause filter logic for the query builder pagination
-   */
-  private getFilters<T>(
-    cursor: keyof T,
-    decoded: string | number,
-    order: tOrderEnum | tOppositeOrder,
-    innerCursor?: string,
-  ): FilterQuery<Dictionary<T>> {
-    return innerCursor
-      ? {
-          [cursor]: {
-            [innerCursor]: {
-              [order]: decoded,
-            },
-          },
-        }
-      : {
-          [cursor]: {
-            [order]: decoded,
-          },
-        };
   }
 }

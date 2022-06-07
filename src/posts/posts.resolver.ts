@@ -23,7 +23,6 @@ import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
 import { PostTagInput } from './inputs/post-tag.input';
 import { PostDto } from './dtos/post.dto';
 import { PaginatedPostsType } from './gql-types/paginated-posts.type';
-import { SearchPostsDto } from './dtos/search-posts.dto';
 import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { PubSub } from 'mercurius';
@@ -34,6 +33,7 @@ import { TagEntity } from '../tags/entities/tag.entity';
 import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
 import { UserEntity } from '../users/entities/user.entity';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -126,7 +126,7 @@ export class PostsResolver {
   @Public()
   @Query(() => PaginatedPostsType)
   public async filterPost(
-    @Args() dto: SearchPostsDto,
+    @Args() dto: ExtendedSearchDto,
   ): Promise<IPaginated<PostEntity>> {
     return this.postsService.filterPosts(dto);
   }

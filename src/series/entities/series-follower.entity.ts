@@ -1,9 +1,9 @@
 import { Entity, ManyToOne, Unique } from '@mikro-orm/core';
-import { ISeriesFollower } from '../interfaces/series-follower.interface';
 import { UserEntity } from '../../users/entities/user.entity';
 import { IsNotEmpty } from 'class-validator';
 import { SeriesEntity } from './series.entity';
 import { CreationEntity } from '../../common/entities/creation.entity';
+import { ISeriesFollower } from '../interfaces/series-follower.interface';
 
 @Entity({ tableName: 'series_followers' })
 @Unique({ properties: ['user', 'series'] })

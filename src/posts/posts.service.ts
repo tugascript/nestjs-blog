@@ -12,7 +12,6 @@ import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
 import { LocalMessageType } from '../common/gql-types/message.type';
 import { PostTagInput } from './inputs/post-tag.input';
 import { IPaginated } from '../common/interfaces/paginated.interface';
-import { SearchPostsDto } from './dtos/search-posts.dto';
 import {
   getQueryCursor,
   QueryCursorEnum,
@@ -29,6 +28,7 @@ import { TagEntity } from '../tags/entities/tag.entity';
 import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
 import { UserEntity } from '../users/entities/user.entity';
 import { FileUpload } from 'graphql-upload';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 
 @Injectable()
 export class PostsService {
@@ -253,7 +253,7 @@ export class PostsService {
     order,
     first,
     after,
-  }: SearchPostsDto): Promise<IPaginated<PostEntity>> {
+  }: ExtendedSearchDto): Promise<IPaginated<PostEntity>> {
     const qb = this.postsRepository.createQueryBuilder(this.postAlias);
 
     if (search) {

@@ -95,7 +95,7 @@ describe('UsersService', () => {
   let idToDelete: number;
   describe('findUsers', () => {
     it('should get all users containing the letter a', async () => {
-      const paginated = await usersService.findUsers({
+      const paginated = await usersService.filterUsers({
         search: 'a',
         order: QueryOrderEnum.DESC,
         cursor: QueryCursorEnum.DATE,

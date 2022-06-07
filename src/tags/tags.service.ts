@@ -22,12 +22,16 @@ export class TagsService {
   public async createTag(userId: number, name: string): Promise<TagEntity> {
     const count = await this.tagsRepository.count({ author: userId });
 
-    if (count === 50) {
+    if (count === 50)
       throw new BadRequestException('Each user can only have 50 tags');
-    }
+
+    name = this.commonService.formatTitle(name);
+    const nameCount = await this.tagsRepository.count({ name, author: userId });
+
+    if (nameCount > 0) throw new BadRequestException('Tag already exists');
 
     const tag = this.tagsRepository.create({
-      name: this.commonService.formatTitle(name),
+      name,
       author: userId,
     });
     await this.commonService.saveEntity(this.tagsRepository, tag, true);
@@ -54,7 +58,7 @@ export class TagsService {
    *
    * Delete CRUD action for Tags.
    */
-  public async deletedTag(
+  public async deleteTag(
     userId: number,
     tagId: number,
   ): Promise<LocalMessageType> {

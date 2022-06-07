@@ -32,4 +32,8 @@ export const validationSchema = Joi.object({
   WS_TIME: Joi.number().required(),
   THROTTLE_TTL: Joi.number().required(),
   THROTTLE_LIMIT: Joi.number().required(),
+  NOTIFICATION_UUID: Joi.string().uuid({ version: 'uuidv4' }).required(),
+  COMMENT_UUID: Joi.string().uuid({ version: 'uuidv4' }).required(),
+  REPLY_UUID: Joi.string().uuid({ version: 'uuidv4' }).required(),
+  UPLOADER_UUID: Joi.string().uuid({ version: 'uuidv4' }).required(),
 });

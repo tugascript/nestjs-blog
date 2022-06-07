@@ -39,7 +39,7 @@ export class TagsResolver {
     @CurrentUser() user: IAccessPayload,
     @Args() dto: TagDto,
   ) {
-    return this.tagsService.deletedTag(user.id, dto.tagId);
+    return this.tagsService.deleteTag(user.id, dto.tagId);
   }
 
   @Query(() => [TagType])

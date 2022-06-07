@@ -9,23 +9,25 @@ import { ConfigService } from '@nestjs/config';
 import sharp from 'sharp';
 import { IBucketData } from 'src/config/interfaces/bucket-data.inteface';
 import { Readable } from 'stream';
-import { v4 as uuidV4 } from 'uuid';
+import { v4 as uuidV4, v5 as uuidV5 } from 'uuid';
 import { CommonService } from '../common/common.service';
 import { FileUploadDto } from './dtos/file-upload.dto';
 import { MAX_WIDTH, QUALITY_ARRAY } from './utils/uploader.constants';
 
 @Injectable()
 export class UploaderService {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly commonService: CommonService,
-  ) {}
-
   private readonly client = new S3Client(
     this.configService.get<S3ClientConfig>('bucketConfig'),
   );
   private readonly bucketData =
     this.configService.get<IBucketData>('bucketData');
+  private readonly uploaderNamespace =
+    this.configService.get<string>('UPLOADER_UUID');
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly commonService: CommonService,
+  ) {}
 
   /**
    * Upload Image
@@ -48,7 +50,7 @@ export class UploaderService {
     );
     buffer = await this.compressImage(buffer, ratio);
 
-    return await this.uploadFile(userId, buffer, '.jpg');
+    return await this.uploadFile(userId, buffer, 'jpg');
   }
 
   /**
@@ -59,13 +61,13 @@ export class UploaderService {
   public async deleteFile(url: string): Promise<void> {
     if (!this.validateBucketUrl(url))
       throw new BadRequestException('Url not valid');
-    const keyArr = url.split('/');
+    const keyArr = url.split('.com/');
 
     try {
       await this.client.send(
         new DeleteObjectCommand({
           Bucket: this.bucketData.name,
-          Key: keyArr[keyArr.length - 1],
+          Key: keyArr[1],
         }),
       );
     } catch (error) {
@@ -135,7 +137,8 @@ export class UploaderService {
     fileBuffer: Buffer,
     fileExt: string,
   ): Promise<string> {
-    const key = userId.toString() + '_' + uuidV4() + fileExt;
+    const folderId = uuidV5(userId.toString(), this.uploaderNamespace);
+    const key = `${folderId}/${uuidV4()}.${fileExt}`;
 
     await this.commonService.throwInternalError(
       this.client.send(

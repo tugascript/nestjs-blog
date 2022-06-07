@@ -19,7 +19,7 @@ import { UserType } from './gql-types/user.type';
 import { UsersService } from './users.service';
 import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
-import { PaginatedSeriesType } from 'src/series/gql-types/paginated-series.type';
+import { PaginatedSeriesType } from '../series/gql-types/paginated-series.type';
 import { SearchDto } from '../common/dtos/search.dto';
 import { UserDto } from './dtos/user.dto';
 import { IAccessPayload } from '../auth/interfaces/access-payload.interface';

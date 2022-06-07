@@ -20,7 +20,6 @@ import { LocalMessageType } from '../common/gql-types/message.type';
 import { Public } from '../auth/decorators/public.decorator';
 import { SlugDto } from '../common/dtos/slug.dto';
 import { PaginatedSeriesType } from './gql-types/paginated-series.type';
-import { SearchDto } from '../common/dtos/search.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { SeriesTagInput } from './inputs/series-tag.input';
 import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
@@ -34,6 +33,7 @@ import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
 import { UserEntity } from '../users/entities/user.entity';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { PubSub } from 'mercurius';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -126,7 +126,7 @@ export class SeriesResolver {
   @Public()
   @Query(() => PaginatedSeriesType)
   public async filterSeries(
-    @Args() dto: SearchDto,
+    @Args() dto: ExtendedSearchDto,
   ): Promise<IPaginated<SeriesEntity>> {
     return this.seriesService.filterSeries(dto);
   }

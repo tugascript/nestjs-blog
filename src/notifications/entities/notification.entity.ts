@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { Entity, Enum, ManyToOne, Property } from '@mikro-orm/core';
-import { INotification } from '../interfaces/notification.interface';
 import { NotificationTypeEnum } from '../enums/notification-type.enum';
 import { CommentEntity } from '../../comments/entities/comment.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -10,6 +9,7 @@ import { IsEnum, IsNotEmpty } from 'class-validator';
 import { ReplyEntity } from '../../comments/entities/reply.entity';
 import { SeriesEntity } from '../../series/entities/series.entity';
 import { NotificationEntityEnum } from '../enums/notification-entity.enum';
+import { INotification } from '../interfaces/notification.interface';
 
 @Entity({ tableName: 'notifications' })
 export class NotificationEntity

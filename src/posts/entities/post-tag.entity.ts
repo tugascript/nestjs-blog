@@ -2,8 +2,8 @@ import { Entity, ManyToOne, PrimaryKeyType, Unique } from '@mikro-orm/core';
 import { IsNotEmpty } from 'class-validator';
 import { PostEntity } from './post.entity';
 import { CreationEntity } from '../../common/entities/creation.entity';
-import { IPostTag } from '../interfaces/post-tag.interface';
 import { TagEntity } from '../../tags/entities/tag.entity';
+import { IPostTag } from '../interfaces/post-tag.interface';
 
 @Entity({ tableName: 'post_tags' })
 @Unique({ properties: ['tag', 'post'] })

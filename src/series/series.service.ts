@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSeriesInput } from './inputs/create-series.input';
 import { UpdateSeriesInput } from './inputs/update-series.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
@@ -10,7 +14,6 @@ import { TagsService } from '../tags/tags.service';
 import { RatioEnum } from '../common/enums/ratio.enum';
 import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
 import { SeriesTagInput } from './inputs/series-tag.input';
-import { SearchDto } from '../common/dtos/search.dto';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import {
   getQueryCursor,
@@ -28,6 +31,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PubSub } from 'mercurius';
 import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
 import { FileUpload } from 'graphql-upload';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 
 @Injectable()
 export class SeriesService {
@@ -115,7 +119,7 @@ export class SeriesService {
     { seriesId, picture }: UpdateSeriesPictureInput,
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
-    this.updateSeriesPictureLogic(series, picture);
+    await this.updateSeriesPictureLogic(series, picture);
     return series;
   }
 
@@ -131,6 +135,13 @@ export class SeriesService {
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
     const tag = await this.tagsService.tagById(userId, tagId);
+    const count = await this.seriesTagsRepository.count({
+      series: seriesId,
+      tag: tagId,
+    });
+
+    if (count > 0) throw new BadRequestException('Tag already added to series');
+
     const seriesTag = await this.seriesTagsRepository.create({
       series,
       tag,
@@ -170,7 +181,18 @@ export class SeriesService {
     seriesId: number,
   ): Promise<SeriesEntity> {
     const series = await this.seriesById(seriesId);
-    const follower = await this.seriesFollowerByPKs(userId, seriesId);
+    const count = await this.seriesFollowersRepository.count({
+      series: seriesId,
+      user: userId,
+    });
+
+    if (count > 0)
+      throw new BadRequestException("You're already following this series");
+
+    const follower = await this.seriesFollowersRepository.create({
+      series: seriesId,
+      user: userId,
+    });
     await this.commonService.saveEntity(
       this.seriesFollowersRepository,
       follower,
@@ -260,7 +282,8 @@ export class SeriesService {
     order,
     first,
     after,
-  }: SearchDto): Promise<IPaginated<SeriesEntity>> {
+    authorId,
+  }: ExtendedSearchDto): Promise<IPaginated<SeriesEntity>> {
     const qb = this.seriesRepository.createQueryBuilder(this.seriesAlias);
 
     if (search) {
@@ -268,6 +291,12 @@ export class SeriesService {
         title: {
           $ilike: this.commonService.formatSearch(search),
         },
+      });
+    }
+
+    if (authorId) {
+      qb.andWhere({
+        author: authorId,
       });
     }
 
@@ -292,35 +321,19 @@ export class SeriesService {
     userId: number,
     { cursor, order, first, after }: FilterDto,
   ): Promise<IPaginated<SeriesEntity>> {
-    const following = await this.seriesFollowersRepository.find({
-      user: userId,
-    });
-
-    if (following.length === 0) {
-      return {
-        currentCount: 0,
-        previousCount: 0,
-        edges: [],
-        pageInfo: {
-          endCursor: '',
-          startCursor: '',
-          hasPreviousPage: false,
-          hasNextPage: false,
-        },
-      };
-    }
-
-    const ids: number[] = [];
-
-    for (let i = 0; i < following.length; i++) {
-      ids.push(following[i].series.id);
-    }
+    const idsQuery = this.seriesFollowersRepository
+      .createQueryBuilder(this.seriesFollowersAlias)
+      .select(`${this.seriesFollowersAlias}.series_id`)
+      .where({
+        user: userId,
+      })
+      .getKnexQuery();
 
     const qb = this.seriesRepository
       .createQueryBuilder(this.seriesAlias)
       .where({
         id: {
-          $in: ids,
+          $in: idsQuery,
         },
       });
     return this.commonService.queryBuilderPagination(

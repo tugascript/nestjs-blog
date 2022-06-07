@@ -2,8 +2,8 @@ import { Entity, ManyToOne, Unique } from '@mikro-orm/core';
 import { IsNotEmpty } from 'class-validator';
 import { SeriesEntity } from './series.entity';
 import { CreationEntity } from '../../common/entities/creation.entity';
-import { ISeriesTag } from '../interfaces/series-tag.interface';
 import { TagEntity } from '../../tags/entities/tag.entity';
+import { ISeriesTag } from '../interfaces/series-tag.interface';
 
 @Entity({ tableName: 'series_tags' })
 @Unique({ properties: ['tag', 'series'] })

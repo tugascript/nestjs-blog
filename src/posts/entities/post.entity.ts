@@ -1,11 +1,18 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
-import { Collection, Entity, OneToMany, Property } from '@mikro-orm/core';
+import {
+  Collection,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  Property,
+} from '@mikro-orm/core';
 import { ExtendedBaseEntity } from '../../common/entities/extended-base.entity';
-import { IPost } from '../interfaces/post.interface';
-import { Length } from 'class-validator';
+import { IsNotEmpty, Length } from 'class-validator';
 import { CommentEntity } from '../../comments/entities/comment.entity';
 import { PostLikeEntity } from './post-like.entity';
 import { PostTagEntity } from './post-tag.entity';
+import { IPost } from '../interfaces/post.interface';
+import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity({ tableName: 'posts' })
 export class PostEntity extends ExtendedBaseEntity implements IPost {
@@ -35,4 +42,12 @@ export class PostEntity extends ExtendedBaseEntity implements IPost {
     CommentEntity,
     PostEntity
   >(this);
+
+  @ManyToOne({
+    entity: () => UserEntity,
+    inversedBy: (u) => u.writtenPosts,
+    onDelete: 'cascade',
+  })
+  @IsNotEmpty()
+  public author!: UserEntity;
 }

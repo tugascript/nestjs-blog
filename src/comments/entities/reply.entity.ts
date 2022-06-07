@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 import {
   Collection,
   Entity,
@@ -8,13 +9,13 @@ import {
 import { IsNotEmpty, Length } from 'class-validator';
 import { UserEntity } from '../../users/entities/user.entity';
 import { PostEntity } from '../../posts/entities/post.entity';
-import { IReply } from '../interfaces/reply.interface';
 import { CommentEntity } from './comment.entity';
 import { ReplyLikeEntity } from './reply-like.entity';
-import { AuthoredEntity } from '../../common/entities/authored.entity';
+import { LocalBaseEntity } from '../../common/entities/base.entity';
+import { IReply } from '../interfaces/reply.interface';
 
 @Entity({ tableName: 'replies' })
-export class ReplyEntity extends AuthoredEntity implements IReply {
+export class ReplyEntity extends LocalBaseEntity implements IReply {
   @Property({ columnType: 'varchar(350)' })
   @Length(1, 350)
   public content: string;
@@ -27,7 +28,6 @@ export class ReplyEntity extends AuthoredEntity implements IReply {
 
   @ManyToOne({
     entity: () => PostEntity,
-    inversedBy: (p) => p.comments,
     onDelete: 'cascade',
   })
   @IsNotEmpty()
@@ -46,4 +46,15 @@ export class ReplyEntity extends AuthoredEntity implements IReply {
     nullable: true,
   })
   public mention?: UserEntity;
+
+  @ManyToOne({
+    entity: () => UserEntity,
+    inversedBy: (u) => u.writtenReplies,
+    onDelete: 'cascade',
+  })
+  @IsNotEmpty()
+  public author!: UserEntity;
+
+  @Property({ default: false })
+  public mute: boolean = false;
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 import {
   Collection,
   Entity,
@@ -5,15 +6,16 @@ import {
   OneToMany,
   Property,
 } from '@mikro-orm/core';
-import { IComment } from '../interfaces/comments.interface';
 import { IsNotEmpty, Length } from 'class-validator';
 import { PostEntity } from '../../posts/entities/post.entity';
 import { ReplyEntity } from './reply.entity';
 import { CommentLikeEntity } from './comment-like.entity';
-import { AuthoredEntity } from '../../common/entities/authored.entity';
+import { IComment } from '../interfaces/comments.interface';
+import { UserEntity } from '../../users/entities/user.entity';
+import { LocalBaseEntity } from '../../common/entities/base.entity';
 
 @Entity({ tableName: 'comments' })
-export class CommentEntity extends AuthoredEntity implements IComment {
+export class CommentEntity extends LocalBaseEntity implements IComment {
   @Property({ columnType: 'varchar(350)' })
   @Length(1, 350)
   public content: string;
@@ -37,4 +39,15 @@ export class CommentEntity extends AuthoredEntity implements IComment {
     ReplyEntity,
     CommentEntity
   >(this);
+
+  @ManyToOne({
+    entity: () => UserEntity,
+    inversedBy: (u) => u.writtenComments,
+    onDelete: 'cascade',
+  })
+  @IsNotEmpty()
+  public author!: UserEntity;
+
+  @Property({ default: false })
+  public mute: boolean = false;
 }
