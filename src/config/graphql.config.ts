@@ -15,10 +15,6 @@ import { MercuriusExtendedDriverConfig } from './interfaces/mercurius-extended-d
 import { IWsCtx } from './interfaces/ws-ctx.interface';
 import { IWsParams } from './interfaces/ws-params.interface';
 import { LoadersService } from '../loaders/loaders.service';
-import { ISeries } from '../series/interfaces/series.interface';
-import { IPost } from '../posts/interfaces/post.interface';
-import { IComment } from '../comments/interfaces/comments.interface';
-import { IReply } from '../comments/interfaces/reply.interface';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -112,42 +108,7 @@ export class GqlConfigService implements GqlOptionsFactory {
           },
         };
       },
-      loaders: {
-        Series: {
-          author: this.loadersService.authorRelationLoader<ISeries>(),
-          tags: this.loadersService.seriesTagsLoader(),
-          posts: this.loadersService.seriesPostsLoader(),
-          followersCount: this.loadersService.seriesFollowersCountLoader(),
-        },
-        Post: {
-          author: this.loadersService.authorRelationLoader<IPost>(),
-          tags: this.loadersService.postTagsLoader(),
-          likesCount: this.loadersService.postLikesCountLoader(),
-          likes: this.loadersService.postLikesLoader(),
-          commentsCount: this.loadersService.postCommentsCountLoader(),
-          comments: this.loadersService.postCommentsLoader(),
-        },
-        Comment: {
-          author: this.loadersService.authorRelationLoader<IComment>(),
-          likesCount: this.loadersService.commentLikesCountLoader(),
-          likes: this.loadersService.commentLikesLoader(),
-          repliesCount: this.loadersService.commentRepliesCountLoader(),
-          replies: this.loadersService.commentRepliesLoader(),
-        },
-        Reply: {
-          author: this.loadersService.authorRelationLoader<IReply>(),
-          likesCount: this.loadersService.replyLikesCountLoader(),
-          likes: this.loadersService.replyLikesLoader(),
-          mention: this.loadersService.replyMentionLoader(),
-        },
-        User: {
-          likedPostsCount: this.loadersService.userLikedPostsCountLoader(),
-          likedPosts: this.loadersService.userLikedPostsLoader(),
-          followedSeriesCount:
-            this.loadersService.usersFollowedSeriesCountLoader(),
-          followedSeries: this.loadersService.usersFollowedSeriesLoader(),
-        },
-      },
+      loaders: this.loadersService.getLoaders(),
       plugins,
     };
   }

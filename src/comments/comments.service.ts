@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateCommentInput } from './inputs/create-comment.input';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { CommentEntity } from './entities/comment.entity';
@@ -126,6 +126,14 @@ export class CommentsService {
     commentId: number,
   ): Promise<CommentEntity> {
     const comment = await this.commentById(commentId);
+    const count = await this.commentLikesRepository.count({
+      comment: commentId,
+      user: userId,
+    });
+
+    if (count > 0)
+      throw new BadRequestException('You already liked this comment');
+
     const like = await this.commentLikesRepository.create({
       comment,
       user: userId,
@@ -387,7 +395,7 @@ export class CommentsService {
         author: userId,
         id: commentId,
       },
-      populate && { populate: ['post'] },
+      populate ? { populate: ['post'] } : undefined,
     );
     this.commonService.checkExistence('Comment', comment);
     return comment;

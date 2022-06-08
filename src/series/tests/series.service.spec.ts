@@ -21,38 +21,13 @@ import { NotificationsModule } from '../../notifications/notifications.module';
 import { v4 as uuidV4 } from 'uuid';
 import { faker } from '@faker-js/faker';
 import { hash } from 'bcrypt';
-import { createReadStream } from 'fs';
-import { join } from 'path';
-import { FileUpload } from 'graphql-upload';
-import { PubSub } from 'mercurius';
 import { UploaderService } from '../../uploader/uploader.service';
 import { QueryCursorEnum } from '../../common/enums/query-cursor.enum';
 import { QueryOrderEnum } from '../../common/enums/query-order.enum';
 import { LocalMessageType } from '../../common/gql-types/message.type';
-
-class MockPubSub implements PubSub {
-  public publish = jest.fn();
-  public subscribe = jest.fn();
-}
+import { fakeName, MockPubSub, picture } from '../../common/tests/mocks.spec';
 
 const pubsub = new MockPubSub();
-
-const fileStream = () =>
-  createReadStream(join(__dirname, '..', '..', '..', 'test/files/test.jpeg'));
-
-const file: FileUpload = {
-  createReadStream: () => fileStream(),
-  filename: 'test_image',
-  mimetype: 'image/jpeg',
-  encoding: 'JPEG',
-};
-
-const picture = (): Promise<FileUpload> =>
-  new Promise<FileUpload>((resolve) => resolve(file));
-
-const fakeName = (): string =>
-  `${faker.name.findName()} ${uuidV4().substring(0, 4)}`;
-
 describe('SeriesService', () => {
   let seriesService: SeriesService,
     commonService: CommonService,
@@ -156,6 +131,7 @@ describe('SeriesService', () => {
         title,
         picture: picture(),
         tagIds,
+        description: faker.lorem.sentence(3),
       });
       expect(series).toBeInstanceOf(SeriesEntity);
       expect(series.title).toBe(commonService.formatTitle(title));
@@ -165,6 +141,7 @@ describe('SeriesService', () => {
           title,
           picture: picture(),
           tagIds,
+          description: faker.lorem.sentence(3),
         }),
       ).rejects.toThrowError();
     });
@@ -280,6 +257,7 @@ describe('SeriesService', () => {
             title,
             picture,
             slug: commonService.generateSlug(title),
+            description: faker.lorem.sentence(3),
             author: userId,
           }),
         );

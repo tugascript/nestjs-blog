@@ -6,6 +6,7 @@ import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { IPost } from '../../posts/interfaces/post.interface';
 
 export interface ISeries extends IExtendedBase {
+  description: string;
   tags: Collection<any, any> | ITag[];
   followers: Collection<any, any> | IPaginated<IUser>;
   followersCount?: number;

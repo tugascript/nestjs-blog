@@ -14,8 +14,8 @@ export interface IUser extends IBase {
   picture?: string;
   onlineStatus: OnlineStatusEnum;
   lastOnline: Date;
-  likedPosts: Collection<any, any> | IPaginated<IPost>;
-  followedSeries: Collection<any, any> | IPaginated<ISeries>;
+  likedPosts?: Collection<any, any> | IPaginated<IPost>;
+  followedSeries?: Collection<any, any> | IPaginated<ISeries>;
   likedPostsCount?: number;
   likedSeriesCount?: number;
 }

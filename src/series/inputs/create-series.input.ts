@@ -21,6 +21,10 @@ export abstract class CreateSeriesInput implements ISeriesInput {
   @Matches(NAME_REGEX)
   public title: string;
 
+  @Field(() => String)
+  @Length(5, 500)
+  public description: string;
+
   @Field(() => GraphQLUpload)
   @ValidatePromise()
   @Type(() => FileUploadDto)

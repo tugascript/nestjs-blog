@@ -321,17 +321,20 @@ export class PostsService {
     first,
     after,
   }: FilterSeriesPostDto): Promise<IPaginated<PostEntity>> {
-    await this.seriesService.checkSeriesExistence(seriesId);
-    const qb = this.postsRepository
-      .createQueryBuilder(this.postAlias)
-      .leftJoin(`${this.postAlias}.tags`, 't')
+    const idQuery = this.postTagsRepository
+      .createQueryBuilder(this.postTagsAlias)
+      .select(`${this.postTagsAlias}.post_id`)
       .where({
-        tags: {
-          tag: {
-            $in: this.seriesService.seriesTagsQuery(seriesId),
-          },
+        tag: {
+          $in: this.seriesService.seriesTagsQuery(seriesId),
         },
-      });
+      })
+      .getKnexQuery();
+    const qb = this.postsRepository.createQueryBuilder(this.postAlias).where({
+      id: {
+        $in: idQuery,
+      },
+    });
     return this.commonService.queryBuilderPagination(
       this.postAlias,
       getQueryCursor(cursor),
@@ -359,10 +362,7 @@ export class PostsService {
     after,
     order,
   }: FilterPostLikesDto): Promise<IPaginated<UserEntity>> {
-    const count = await this.postsRepository.count({ id: postId });
-
-    if (count === 0) throw new NotFoundException('Post not found');
-
+    await this.checkPostExistence(postId);
     const likesQuery = this.postLikesRepository
       .createQueryBuilder(this.postLikesAlias)
       .select(`${this.postLikesAlias}.user_id`)

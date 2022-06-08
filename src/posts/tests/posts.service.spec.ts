@@ -16,10 +16,6 @@ import { PostTagEntity } from '../entities/post-tag.entity';
 import { TagsModule } from '../../tags/tags.module';
 import { SeriesModule } from '../../series/series.module';
 import { UserEntity } from '../../users/entities/user.entity';
-import { PubSub } from 'mercurius';
-import { createReadStream } from 'fs';
-import { join } from 'path';
-import { FileUpload } from 'graphql-upload';
 import { CommonService } from '../../common/common.service';
 import { TagsService } from '../../tags/tags.service';
 import { SeriesService } from '../../series/series.service';
@@ -29,30 +25,10 @@ import { hash } from 'bcrypt';
 import { v4 as uuidV4 } from 'uuid';
 import { QueryCursorEnum } from '../../common/enums/query-cursor.enum';
 import { QueryOrderEnum } from '../../common/enums/query-order.enum';
-
-class MockPubSub implements PubSub {
-  public publish = jest.fn();
-  public subscribe = jest.fn();
-}
+import { LocalMessageType } from '../../common/gql-types/message.type';
+import { fakeName, MockPubSub, picture } from '../../common/tests/mocks.spec';
 
 const pubsub = new MockPubSub();
-
-const fileStream = () =>
-  createReadStream(join(__dirname, '..', '..', '..', 'test/files/test.jpeg'));
-
-const file: FileUpload = {
-  createReadStream: () => fileStream(),
-  filename: 'test_image',
-  mimetype: 'image/jpeg',
-  encoding: 'JPEG',
-};
-
-const picture = (): Promise<FileUpload> =>
-  new Promise<FileUpload>((resolve) => resolve(file));
-
-const fakeName = (): string =>
-  `${faker.name.findName()} ${uuidV4().substring(0, 4)}`;
-
 describe('PostsService', () => {
   let postsService: PostsService,
     commonService: CommonService,
@@ -330,8 +306,8 @@ describe('PostsService', () => {
       expect(filteredPosts2.edges.length).toBe(6);
       expect(filteredPosts2.currentCount).toBe(6);
       expect(filteredPosts2.previousCount).toBe(10);
-      expect(filteredPosts2.pageInfo.hasPreviousPage).toBe(true);
       expect(filteredPosts2.pageInfo.hasNextPage).toBe(false);
+      expect(filteredPosts2.pageInfo.hasPreviousPage).toBe(true);
     });
 
     it('Filter Series Posts', async () => {
@@ -339,7 +315,100 @@ describe('PostsService', () => {
         title: fakeName(),
         picture: picture(),
         tagIds,
+        description: faker.lorem.words(2),
       });
+      const filteredPosts = await postsService.filterSeriesPosts({
+        seriesId: series.id,
+        cursor: QueryCursorEnum.ALPHA,
+        order: QueryOrderEnum.ASC,
+        first: 4,
+      });
+
+      expect(filteredPosts.edges.length).toBe(4);
+      expect(filteredPosts.currentCount).toBe(9);
+      expect(filteredPosts.previousCount).toBe(0);
+      expect(filteredPosts.pageInfo.hasNextPage).toBe(true);
+      expect(filteredPosts.pageInfo.hasPreviousPage).toBe(false);
+
+      const filteredPosts2 = await postsService.filterSeriesPosts({
+        seriesId: series.id,
+        cursor: QueryCursorEnum.ALPHA,
+        order: QueryOrderEnum.ASC,
+        first: 5,
+        after: filteredPosts.pageInfo.endCursor,
+      });
+
+      expect(filteredPosts2.edges.length).toBe(5);
+      expect(filteredPosts2.currentCount).toBe(5);
+      expect(filteredPosts2.previousCount).toBe(4);
+      expect(filteredPosts2.pageInfo.hasNextPage).toBe(false);
+      expect(filteredPosts2.pageInfo.hasPreviousPage).toBe(true);
+    });
+
+    it('Get Post Tags', async () => {
+      const tags = await postsService.postTags(postId);
+      expect(tags.length).toBe(5);
+    });
+
+    it('Get Post Likes', async () => {
+      const users: UserEntity[] = [];
+
+      for (let i = 0; i < 5; i++) {
+        const name = faker.name.findName();
+        users.push(
+          usersRepository.create({
+            name,
+            email: faker.internet.email(),
+            username: commonService.generatePointSlug(name),
+            password: await hash('Ab123456', 10),
+            confirmed: true,
+          }),
+        );
+      }
+
+      await usersRepository.persistAndFlush(users);
+      const likes: PostLikeEntity[] = [];
+
+      for (let i = 0; i < 5; i++) {
+        likes.push(
+          postLikesRepository.create({
+            user: users[i],
+            post: postId,
+          }),
+        );
+      }
+
+      await postLikesRepository.persistAndFlush(likes);
+
+      const filteredUsers = await postsService.postLikes({
+        postId,
+        first: 2,
+        order: QueryOrderEnum.ASC,
+      });
+      expect(filteredUsers.edges.length).toBe(2);
+      expect(filteredUsers.currentCount).toBe(5);
+      expect(filteredUsers.previousCount).toBe(0);
+      expect(filteredUsers.pageInfo.hasNextPage).toBe(true);
+      expect(filteredUsers.pageInfo.hasPreviousPage).toBe(false);
+
+      const filteredUsers2 = await postsService.postLikes({
+        postId,
+        first: 3,
+        order: QueryOrderEnum.ASC,
+        after: filteredUsers.pageInfo.endCursor,
+      });
+      expect(filteredUsers2.edges.length).toBe(3);
+      expect(filteredUsers2.currentCount).toBe(3);
+      expect(filteredUsers2.previousCount).toBe(2);
+      expect(filteredUsers2.pageInfo.hasNextPage).toBe(false);
+      expect(filteredUsers2.pageInfo.hasPreviousPage).toBe(true);
+    });
+
+    it('Delete Post', async () => {
+      const message = await postsService.deletePost(userId, postId);
+      expect(message).toBeInstanceOf(LocalMessageType);
+      expect(message.message).toBe('Post deleted successfully');
+      await expect(postsService.postById(postId)).rejects.toThrowError();
     });
   });
 

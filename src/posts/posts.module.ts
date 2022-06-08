@@ -19,5 +19,6 @@ import { PostTagEntity } from './entities/post-tag.entity';
     NotificationsModule,
   ],
   providers: [PostsResolver, PostsService],
+  exports: [PostsService],
 })
 export class PostsModule {}

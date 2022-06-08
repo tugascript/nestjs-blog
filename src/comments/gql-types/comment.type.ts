@@ -17,6 +17,9 @@ export class CommentType extends AuthoredType implements IComment {
   @Field(() => PostType)
   public post: PostType;
 
+  @Field(() => Boolean)
+  public hasLiked: boolean;
+
   @Field(() => PaginatedUsersType)
   public likes: IPaginated<IUser>;
 

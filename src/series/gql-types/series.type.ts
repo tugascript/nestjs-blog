@@ -7,6 +7,9 @@ import { IUser } from '../../users/interfaces/user.interface';
 
 @ObjectType('Series')
 export class SeriesType extends ExtendedBaseType implements ISeries {
+  @Field(() => String)
+  public description: string;
+
   @Field(() => PaginatedUsersType)
   public followers: IPaginated<IUser>;
 

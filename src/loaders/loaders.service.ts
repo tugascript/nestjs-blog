@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
+import { Injectable, Type } from '@nestjs/common';
 import { UserEntity } from '../users/entities/user.entity';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityManager } from '@mikro-orm/postgresql';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { SeriesEntity } from '../series/entities/series.entity';
 import { PostEntity } from '../posts/entities/post.entity';
@@ -13,18 +12,22 @@ import { IPaginated } from '../common/interfaces/paginated.interface';
 import { IBase } from '../common/interfaces/base.interface';
 import { getQueryCursor } from '../common/enums/query-cursor.enum';
 import { ISeriesPostsResult } from './interfaces/series-posts-result.interface';
-import { SeriesFollowerEntity } from '../series/entities/series-follower.entity';
-import { SeriesTagEntity } from '../series/entities/series-tag.entity';
-import { PostTagEntity } from '../posts/entities/post-tag.entity';
-import { PostLikeEntity } from '../posts/entities/post-like.entity';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { ICountResult } from './interfaces/count-result.interface';
-import { CommentLikeEntity } from '../comments/entities/comment-like.entity';
 import { ReplyEntity } from '../comments/entities/reply.entity';
-import { ReplyLikeEntity } from '../comments/entities/reply-like.entity';
 import { IPageResult } from './interfaces/page-result.interface';
 import { ICreation } from '../common/interfaces/creation.interface';
 import { IAuthored } from '../common/interfaces/authored.interface';
+import { PostLikeEntity } from '../posts/entities/post-like.entity';
+import { SeriesFollowerEntity } from '../series/entities/series-follower.entity';
+import { ReplyLikeEntity } from '../comments/entities/reply-like.entity';
+import { CommentLikeEntity } from '../comments/entities/comment-like.entity';
+import { SeriesTagEntity } from '../series/entities/series-tag.entity';
+import { PostTagEntity } from '../posts/entities/post-tag.entity';
+import { ISeries } from '../series/interfaces/series.interface';
+import { IPost } from '../posts/interfaces/post.interface';
+import { IComment } from '../comments/interfaces/comments.interface';
+import { IReply } from '../comments/interfaces/reply.interface';
 
 @Injectable()
 export class LoadersService {
@@ -35,28 +38,7 @@ export class LoadersService {
   private readonly tagAlias = 't';
 
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: EntityRepository<UserEntity>,
-    @InjectRepository(SeriesEntity)
-    private readonly seriesRepository: EntityRepository<SeriesEntity>,
-    @InjectRepository(SeriesFollowerEntity)
-    private readonly seriesFollowersRepository: EntityRepository<SeriesFollowerEntity>,
-    @InjectRepository(SeriesTagEntity)
-    private readonly seriesTagsRepository: EntityRepository<SeriesTagEntity>,
-    @InjectRepository(PostEntity)
-    private readonly postsRepository: EntityRepository<PostEntity>,
-    @InjectRepository(PostTagEntity)
-    private readonly postTagsRepository: EntityRepository<PostTagEntity>,
-    @InjectRepository(PostLikeEntity)
-    private readonly postLikesRepository: EntityRepository<PostLikeEntity>,
-    @InjectRepository(CommentEntity)
-    private readonly commentsRepository: EntityRepository<CommentEntity>,
-    @InjectRepository(CommentLikeEntity)
-    private readonly commentLikesRepository: EntityRepository<CommentLikeEntity>,
-    @InjectRepository(ReplyEntity)
-    private readonly repliesRepository: EntityRepository<ReplyEntity>,
-    @InjectRepository(ReplyLikeEntity)
-    private readonly replyLikesRepository: EntityRepository<ReplyLikeEntity>,
+    private readonly em: EntityManager,
     private readonly commonService: CommonService,
   ) {}
 
@@ -159,72 +141,44 @@ export class LoadersService {
     return LoadersService.getResults(ids, map);
   }
 
-  /**
-   * Basic Counter
-   *
-   * Loads the count of one-to-many relationships.
-   */
-  private static async basicCounter<T extends IBase, C extends IBase>(
-    data: ILoader<T>[],
-    parentRepo: EntityRepository<T>,
-    childRepo: EntityRepository<C>,
-    childRelation: keyof C,
-  ): Promise<number[]> {
-    if (data.length === 0) return [];
-
-    const parentId = 'p.id';
-    const knex = parentRepo.getKnex();
-    const parentRef = knex.ref(parentId);
-    const ids = LoadersService.getEntityIds(data);
-
-    const countQuery = childRepo
-      .createQueryBuilder('c')
-      .count('c.id')
-      .where({ [childRelation]: { $in: parentRef } })
-      .as('count');
-    const raw: ICountResult[] = await parentRepo
-      .createQueryBuilder('p')
-      .select([parentId, countQuery])
-      .where({ id: { $in: ids } })
-      .groupBy(parentId)
-      .execute();
-
-    return LoadersService.getCounterResults(ids, raw);
-  }
-
-  /**
-   * Pivot Counter
-   *
-   * Loads the count of many-to-many relationships.
-   */
-  private static async pivotCounter<T extends IBase, P extends ICreation>(
-    data: ILoader<T>[],
-    parentRepo: EntityRepository<T>,
-    pivotRepo: EntityRepository<P>,
-    pivotParent: keyof P,
-    pivotChild: keyof P,
-  ): Promise<number[]> {
-    if (data.length === 0) return [];
-
-    const strPivotChild = String(pivotChild);
-    const parentId = 'p.id';
-    const knex = parentRepo.getKnex();
-    const parentRef = knex.ref(parentId);
-    const ids = LoadersService.getEntityIds(data);
-
-    const countQuery = pivotRepo
-      .createQueryBuilder('pt')
-      .count(`pt.${strPivotChild}_id`)
-      .where({ [pivotParent]: { $in: parentRef } })
-      .as('count');
-    const raw: ICountResult[] = await parentRepo
-      .createQueryBuilder('p')
-      .select([parentId, countQuery])
-      .where({ id: { $in: ids } })
-      .groupBy(parentId)
-      .execute();
-
-    return LoadersService.getCounterResults(ids, raw);
+  public getLoaders() {
+    return {
+      Series: {
+        author: this.authorRelationLoader<ISeries>(),
+        tags: this.seriesTagsLoader(),
+        posts: this.seriesPostsLoader(),
+        followersCount: this.seriesFollowersCountLoader(),
+        followers: this.seriesFollowersLoader(),
+      },
+      Post: {
+        author: this.authorRelationLoader<IPost>(),
+        tags: this.postTagsLoader(),
+        likesCount: this.postLikesCountLoader(),
+        likes: this.postLikesLoader(),
+        commentsCount: this.postCommentsCountLoader(),
+        comments: this.postCommentsLoader(),
+      },
+      Comment: {
+        author: this.authorRelationLoader<IComment>(),
+        likesCount: this.commentLikesCountLoader(),
+        likes: this.commentLikesLoader(),
+        repliesCount: this.commentRepliesCountLoader(),
+        replies: this.commentRepliesLoader(),
+        post: this.commentPostLoader(),
+      },
+      Reply: {
+        author: this.authorRelationLoader<IReply>(),
+        likesCount: this.replyLikesCountLoader(),
+        likes: this.replyLikesLoader(),
+        mention: this.replyMentionLoader(),
+      },
+      User: {
+        likedPostsCount: this.userLikedPostsCountLoader(),
+        likedPosts: this.userLikedPostsLoader(),
+        followedSeriesCount: this.usersFollowedSeriesCountLoader(),
+        followedSeries: this.usersFollowedSeriesLoader(),
+      },
+    };
   }
 
   //_________ SERIES LOADERS _________
@@ -233,12 +187,12 @@ export class LoadersService {
    *
    * Get tags relation.
    */
-  public seriesTagsLoader() {
+  private seriesTagsLoader() {
     return async (data: ILoader<SeriesEntity>[]): Promise<TagEntity[][]> => {
       if (data.length === 0) return [];
 
       const series = LoadersService.getEntities(data);
-      await this.seriesRepository.populate(series, ['tags', 'tags.tag']);
+      await this.em.populate(series, ['tags', 'tags.tag']);
       const tags: TagEntity[][] = [];
 
       for (let i = 0; i < series.length; i++) {
@@ -256,34 +210,32 @@ export class LoadersService {
     };
   }
 
-  //_________ POSTS LOADERS _________
-
   /**
    * Series Followers Count Loader
    *
    * Get followers count relation.
    */
-  public seriesFollowersCountLoader() {
+  private seriesFollowersCountLoader() {
     return async (data: ILoader<SeriesEntity>[]): Promise<number[]> => {
-      return LoadersService.pivotCounter(
+      return this.pivotCounter(
         data,
-        this.seriesRepository,
-        this.seriesFollowersRepository,
+        SeriesEntity,
+        SeriesFollowerEntity,
         'series',
         'user',
       );
     };
   }
 
-  public seriesFollowersLoader() {
+  private seriesFollowersLoader() {
     return async (
       data: ILoader<SeriesEntity, FilterRelationDto>[],
     ): Promise<IPaginated<UserEntity>[]> => {
       return this.pivotPaginator(
         data,
-        this.seriesRepository,
-        this.seriesFollowersRepository,
-        this.usersRepository,
+        SeriesEntity,
+        SeriesFollowerEntity,
+        UserEntity,
         'series',
         'user',
         'username',
@@ -296,7 +248,7 @@ export class LoadersService {
    *
    * Get posts paginated relation.
    */
-  public seriesPostsLoader() {
+  private seriesPostsLoader() {
     return async (
       data: ILoader<SeriesEntity, FilterPostsRelationDto>[],
     ): Promise<IPaginated<PostEntity>[]> => {
@@ -304,16 +256,16 @@ export class LoadersService {
 
       const { cursor, order, first } = data[0].params;
       const ids = LoadersService.getEntityIds(data);
-      const knex = this.seriesRepository.getKnex();
+      const knex = this.em.getKnex();
       const seriesId = this.seriesAlias + '.id';
       const seriesRef = knex.ref(seriesId);
-      const seriesTagsQuery = this.seriesTagsRepository
-        .createQueryBuilder(this.seriesTagAlias)
+      const seriesTagsQuery = this.em
+        .createQueryBuilder(SeriesTagEntity, this.seriesTagAlias)
         .select([`${this.seriesTagAlias}.tag_id`])
         .where({ series: seriesRef })
         .getKnexQuery();
-      const postsCountQuery = await this.postTagsRepository
-        .createQueryBuilder(this.postTagAlias)
+      const postsCountQuery = await this.em
+        .createQueryBuilder(PostTagEntity, this.postTagAlias)
         .count(`${this.postTagAlias}.post_id`)
         .where({
           tag: {
@@ -322,8 +274,8 @@ export class LoadersService {
         })
         .as('posts_count');
       const strCursor = getQueryCursor(cursor);
-      const postsQuery = this.postsRepository
-        .createQueryBuilder(this.postAlias)
+      const postsQuery = this.em
+        .createQueryBuilder(PostEntity, this.postAlias)
         .leftJoin(`${this.postAlias}.tags`, this.tagAlias)
         .select(`${this.postAlias}.*`)
         .where({
@@ -338,8 +290,8 @@ export class LoadersService {
         })
         .limit(first)
         .as('posts');
-      const raw: ISeriesPostsResult[] = await this.seriesRepository
-        .createQueryBuilder(this.seriesAlias)
+      const raw: ISeriesPostsResult[] = await this.em
+        .createQueryBuilder(SeriesEntity, this.seriesAlias)
         .select([seriesId, postsCountQuery, postsQuery])
         .where({ id: { $in: ids } })
         .groupBy([seriesId, `${this.postAlias}.id`])
@@ -351,7 +303,7 @@ export class LoadersService {
         const entities: PostEntity[] = [];
 
         for (let j = 0; j < posts.length; j++) {
-          entities.push(this.postsRepository.map(posts[j]));
+          entities.push(this.em.map(PostEntity, posts[j]));
         }
 
         resultMap.set(
@@ -370,17 +322,19 @@ export class LoadersService {
     };
   }
 
+  //_________ POSTS LOADERS _________
+
   /**
    * Post Tags Loader
    *
    * Get tags relation.
    */
-  public postTagsLoader() {
+  private postTagsLoader() {
     return async (data: ILoader<PostEntity>[]): Promise<TagEntity[][]> => {
       if (data.length === 0) return [];
 
       const posts = LoadersService.getEntities(data);
-      await this.postsRepository.populate(posts, ['tags', 'tags.tag']);
+      await this.em.populate(posts, ['tags', 'tags.tag']);
       const tags: TagEntity[][] = [];
 
       for (let i = 0; i < posts.length; i++) {
@@ -403,34 +357,32 @@ export class LoadersService {
    *
    * Get likes count relation.
    */
-  public postLikesCountLoader() {
+  private postLikesCountLoader() {
     return async (data: ILoader<PostEntity>[]): Promise<number[]> => {
-      return LoadersService.pivotCounter(
+      return this.pivotCounter(
         data,
-        this.postsRepository,
-        this.postLikesRepository,
+        PostEntity,
+        PostLikeEntity,
         'post',
         'user',
       );
     };
   }
 
-  //_________ COMMENTS LOADERS __________
-
   /**
    * Post Likes Loader
    *
    * Get paginated users of likes relation.
    */
-  public postLikesLoader() {
+  private postLikesLoader() {
     return async (
       data: ILoader<PostEntity, FilterRelationDto>[],
     ): Promise<IPaginated<UserEntity>[]> => {
       return this.pivotPaginator(
         data,
-        this.postsRepository,
-        this.postLikesRepository,
-        this.usersRepository,
+        PostEntity,
+        PostLikeEntity,
+        UserEntity,
         'post',
         'user',
         'username',
@@ -443,14 +395,9 @@ export class LoadersService {
    *
    * Get comments count relation.
    */
-  public postCommentsCountLoader() {
+  private postCommentsCountLoader() {
     return async (data: ILoader<PostEntity>[]) => {
-      return LoadersService.basicCounter(
-        data,
-        this.postsRepository,
-        this.commentsRepository,
-        'post',
-      );
+      return this.basicCounter(data, PostEntity, CommentEntity, 'post');
     };
   }
 
@@ -459,43 +406,37 @@ export class LoadersService {
    *
    * Get paginated comments of post.
    */
-  public postCommentsLoader() {
+  private postCommentsLoader() {
     return async (
       data: ILoader<PostEntity, FilterRelationDto>[],
     ): Promise<IPaginated<CommentEntity>[]> => {
-      return this.basicPaginator(
-        data,
-        this.postsRepository,
-        this.commentsRepository,
-        'post',
-        'id',
-      );
+      return this.basicPaginator(data, PostEntity, CommentEntity, 'post', 'id');
     };
   }
 
-  public commentLikesCountLoader() {
+  //_________ COMMENTS LOADERS __________
+
+  private commentLikesCountLoader() {
     return async (data: ILoader<CommentEntity>[]) => {
-      return LoadersService.pivotCounter(
+      return this.pivotCounter(
         data,
-        this.commentsRepository,
-        this.commentLikesRepository,
+        CommentEntity,
+        CommentLikeEntity,
         'comment',
         'user',
       );
     };
   }
 
-  // REPLY LOADERS
-
-  public commentLikesLoader() {
+  private commentLikesLoader() {
     return async (
       data: ILoader<CommentEntity, FilterRelationDto>[],
     ): Promise<IPaginated<UserEntity>[]> => {
       return this.pivotPaginator(
         data,
-        this.commentsRepository,
-        this.commentLikesRepository,
-        this.usersRepository,
+        CommentEntity,
+        CommentLikeEntity,
+        UserEntity,
         'comment',
         'user',
         'username',
@@ -503,64 +444,72 @@ export class LoadersService {
     };
   }
 
-  public commentRepliesCountLoader() {
+  private commentRepliesCountLoader() {
     return async (data: ILoader<CommentEntity>[]): Promise<number[]> => {
-      return LoadersService.basicCounter(
-        data,
-        this.commentsRepository,
-        this.repliesRepository,
-        'comment',
-      );
+      return this.basicCounter(data, CommentEntity, ReplyEntity, 'comment');
     };
   }
 
-  public commentRepliesLoader() {
+  private commentRepliesLoader() {
     return async (data: ILoader<CommentEntity, FilterRelationDto>[]) => {
       // comments replies loader
       return this.basicPaginator(
         data,
-        this.commentsRepository,
-        this.repliesRepository,
+        CommentEntity,
+        ReplyEntity,
         'comment',
         'id',
+      );
+    };
+  }
+
+  private commentPostLoader() {
+    return async (data: ILoader<CommentEntity>[]): Promise<PostEntity[]> => {
+      if (data.length === 0) return [];
+
+      const ids = LoadersService.getRelationIds(data, 'post');
+      const posts = await this.em.find(PostEntity, { id: { $in: ids } });
+      const map = LoadersService.getEntityMap(posts);
+      return LoadersService.getResults(ids, map);
+    };
+  }
+
+  //_________ COMMENTS LOADERS __________
+
+  private replyLikesCountLoader() {
+    return async (data: ILoader<ReplyEntity>[]) => {
+      return this.pivotCounter(
+        data,
+        ReplyEntity,
+        ReplyLikeEntity,
+        'reply',
+        'user',
+      );
+    };
+  }
+
+  private replyLikesLoader() {
+    return async (data: ILoader<ReplyEntity, FilterRelationDto>[]) => {
+      return this.pivotPaginator(
+        data,
+        ReplyEntity,
+        ReplyLikeEntity,
+        UserEntity,
+        'reply',
+        'user',
+        'username',
       );
     };
   }
 
   // USERS LOADERS
 
-  public replyLikesCountLoader() {
-    return async (data: ILoader<ReplyEntity>[]) => {
-      return LoadersService.pivotCounter(
-        data,
-        this.repliesRepository,
-        this.replyLikesRepository,
-        'reply',
-        'user',
-      );
-    };
-  }
-
-  public replyLikesLoader() {
-    return async (data: ILoader<ReplyEntity, FilterRelationDto>[]) => {
-      return this.pivotPaginator(
-        data,
-        this.repliesRepository,
-        this.replyLikesRepository,
-        this.usersRepository,
-        'reply',
-        'user',
-        'username',
-      );
-    };
-  }
-
-  public replyMentionLoader() {
+  private replyMentionLoader() {
     return async (data: ILoader<ReplyEntity>[]) => {
       if (data.length === 0) return [];
 
       const replies = LoadersService.getEntities(data);
-      await this.repliesRepository.populate(replies, ['mention']);
+      await this.em.populate(replies, ['mention']);
       const results: (UserEntity | null)[] = [];
 
       for (let i = 0; i < replies.length; i++) {
@@ -571,27 +520,25 @@ export class LoadersService {
     };
   }
 
-  public userLikedPostsCountLoader() {
+  private userLikedPostsCountLoader() {
     return async (data: ILoader<UserEntity>[]) => {
-      return LoadersService.pivotCounter(
+      return this.pivotCounter(
         data,
-        this.usersRepository,
-        this.postLikesRepository,
+        UserEntity,
+        PostLikeEntity,
         'user',
         'post',
       );
     };
   }
 
-  //_________ GENERIC LOADERS __________
-
-  public userLikedPostsLoader() {
+  private userLikedPostsLoader() {
     return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
       return this.pivotPaginator(
         data,
-        this.usersRepository,
-        this.postLikesRepository,
-        this.postsRepository,
+        UserEntity,
+        PostLikeEntity,
+        PostEntity,
         'user',
         'post',
         'id',
@@ -599,25 +546,27 @@ export class LoadersService {
     };
   }
 
-  public usersFollowedSeriesCountLoader() {
+  private usersFollowedSeriesCountLoader() {
     return async (data: ILoader<UserEntity>[]) => {
-      return LoadersService.pivotCounter(
+      return this.pivotCounter(
         data,
-        this.usersRepository,
-        this.seriesFollowersRepository,
+        UserEntity,
+        SeriesFollowerEntity,
         'user',
         'series',
       );
     };
   }
 
-  public usersFollowedSeriesLoader() {
+  //_________ GENERIC LOADERS __________
+
+  private usersFollowedSeriesLoader() {
     return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
       return this.pivotPaginator(
         data,
-        this.usersRepository,
-        this.seriesFollowersRepository,
-        this.seriesRepository,
+        UserEntity,
+        SeriesFollowerEntity,
+        SeriesEntity,
         'user',
         'series',
         'id',
@@ -630,12 +579,12 @@ export class LoadersService {
    *
    * Gets every author relation.
    */
-  public authorRelationLoader<T extends IAuthored>() {
+  private authorRelationLoader<T extends IAuthored>() {
     return async (data: ILoader<T>[]): Promise<UserEntity[]> => {
       if (data.length === 0) return [];
 
       const ids = LoadersService.getRelationIds(data, 'author');
-      const users = await this.usersRepository.find({
+      const users = await this.em.find(UserEntity, {
         id: {
           $in: ids,
         },
@@ -646,14 +595,82 @@ export class LoadersService {
   }
 
   /**
+   * Basic Counter
+   *
+   * Loads the count of one-to-many relationships.
+   */
+  private async basicCounter<T extends IBase, C extends IBase>(
+    data: ILoader<T>[],
+    parent: Type<T>,
+    child: Type<C>,
+    childRelation: keyof C,
+  ): Promise<number[]> {
+    if (data.length === 0) return [];
+
+    const parentId = 'p.id';
+    const knex = this.em.getKnex();
+    const parentRef = knex.ref(parentId);
+    const ids = LoadersService.getEntityIds(data);
+
+    const countQuery = this.em
+      .createQueryBuilder(child, 'c')
+      .count('c.id')
+      .where({ [childRelation]: { $in: parentRef } })
+      .as('count');
+    const raw: ICountResult[] = await this.em
+      .createQueryBuilder(parent, 'p')
+      .select([parentId, countQuery])
+      .where({ id: { $in: ids } })
+      .groupBy(parentId)
+      .execute();
+
+    return LoadersService.getCounterResults(ids, raw);
+  }
+
+  /**
+   * Pivot Counter
+   *
+   * Loads the count of many-to-many relationships.
+   */
+  private async pivotCounter<T extends IBase, P extends ICreation>(
+    data: ILoader<T>[],
+    parent: Type<T>,
+    pivot: Type<P>,
+    pivotParent: keyof P,
+    pivotChild: keyof P,
+  ): Promise<number[]> {
+    if (data.length === 0) return [];
+
+    const strPivotChild = String(pivotChild);
+    const parentId = 'p.id';
+    const knex = this.em.getKnex();
+    const parentRef = knex.ref(parentId);
+    const ids = LoadersService.getEntityIds(data);
+
+    const countQuery = this.em
+      .createQueryBuilder(pivot, 'pt')
+      .count(`pt.${strPivotChild}_id`)
+      .where({ [pivotParent]: { $in: parentRef } })
+      .as('count');
+    const raw: ICountResult[] = await this.em
+      .createQueryBuilder(parent, 'p')
+      .select([parentId, countQuery])
+      .where({ id: { $in: ids } })
+      .groupBy(parentId)
+      .execute();
+
+    return LoadersService.getCounterResults(ids, raw);
+  }
+
+  /**
    * Basic Paginator
    *
    * Loads paginated one-to-many relationships
    */
   private async basicPaginator<T extends IBase, C extends IBase>(
     data: ILoader<T, FilterRelationDto>[],
-    parentRepo: EntityRepository<T>,
-    childRepo: EntityRepository<C>,
+    parent: Type<T>,
+    child: Type<C>,
     childRelation: keyof C,
     cursor: keyof C,
   ): Promise<IPaginated<C>[]> {
@@ -663,29 +680,29 @@ export class LoadersService {
     const parentId = 'p.id';
     const childAlias = 'c';
     const childId = 'c.id';
-    const knex = parentRepo.getKnex();
+    const knex = this.em.getKnex();
     const parentRef = knex.ref(parentId);
     const ids = LoadersService.getEntityIds(data);
 
-    const countQuery = childRepo
-      .createQueryBuilder(childAlias)
+    const countQuery = this.em
+      .createQueryBuilder(child, childAlias)
       .count(childId)
       .where({ [childRelation]: { $in: parentRef } })
       .as('count');
-    const entitiesQuery = childRepo
-      .createQueryBuilder(childAlias)
+    const entitiesQuery = this.em
+      .createQueryBuilder(child, childAlias)
       .where({ [childRelation]: { $in: parentRef } })
       .orderBy({ [cursor]: order })
       .limit(first)
       .as('entities');
-    const raw: IPageResult<C>[] = await parentRepo
-      .createQueryBuilder('p')
+    const raw: IPageResult<C>[] = await this.em
+      .createQueryBuilder(parent, 'p')
       .select([parentId, countQuery, entitiesQuery])
       .where({ id: { $in: ids } })
       .groupBy([parentId, childId])
       .execute();
 
-    return this.getPaginationResults<C>(first, childRepo, cursor, ids, raw);
+    return this.getPaginationResults<C>(first, child, cursor, ids, raw);
   }
 
   /**
@@ -699,9 +716,9 @@ export class LoadersService {
     C extends IBase,
   >(
     data: ILoader<T, FilterRelationDto>[],
-    parentRepo: EntityRepository<T>,
-    pivotRepo: EntityRepository<P>,
-    childRepo: EntityRepository<C>,
+    parent: Type<T>,
+    pivot: Type<P>,
+    child: Type<C>,
     pivotParent: keyof P,
     pivotChild: keyof P,
     cursor: keyof C,
@@ -714,40 +731,40 @@ export class LoadersService {
 
     const { first, order } = data[0].params;
     const parentId = 'p.id';
-    const knex = parentRepo.getKnex();
+    const knex = this.em.getKnex();
     const parentRef = knex.ref(parentId);
     const ids = LoadersService.getEntityIds(data);
 
-    const countQuery = pivotRepo
-      .createQueryBuilder('pt')
+    const countQuery = this.em
+      .createQueryBuilder(pivot, 'pt')
       .count(`pt.${strPivotChild}_id`)
       .where({ [strPivotParent]: { $in: parentRef } })
       .as('count');
-    const pivotQuery = pivotRepo
-      .createQueryBuilder('pt')
+    const pivotQuery = this.em
+      .createQueryBuilder(pivot, 'pt')
       .select(`pt.${strPivotChild}_id`)
       .where({ [strPivotParent]: { $in: parentRef } })
       .getKnexQuery();
-    const entitiesQuery = childRepo
-      .createQueryBuilder('c')
+    const entitiesQuery = this.em
+      .createQueryBuilder(child, 'c')
       .select('c.*')
       .where({ id: { $in: pivotQuery } })
       .orderBy({ [cursor]: order })
       .limit(first)
       .as('entities');
-    const raw: IPageResult<C>[] = await parentRepo
-      .createQueryBuilder('p')
+    const raw: IPageResult<C>[] = await this.em
+      .createQueryBuilder(parent, 'p')
       .select([parentId, countQuery, entitiesQuery])
       .where({ id: { $in: ids } })
       .groupBy([parentId, 'c.id'])
       .execute();
 
-    return this.getPaginationResults<C>(first, childRepo, cursor, ids, raw);
+    return this.getPaginationResults<C>(first, child, cursor, ids, raw);
   }
 
   private getPaginationResults<T extends IBase>(
     first: number,
-    childRepo: EntityRepository<T>,
+    child: Type<T>,
     cursor: keyof T,
     ids: number[],
     raw: IPageResult<T>[],
@@ -759,7 +776,7 @@ export class LoadersService {
       const entitiesArr: T[] = [];
 
       for (let j = 0; j < entities.length; j++) {
-        entitiesArr.push(childRepo.map(entities[j]));
+        entitiesArr.push(this.em.map(child, entities[j]));
       }
 
       map.set(

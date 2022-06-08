@@ -61,7 +61,7 @@ export class SeriesService {
    */
   public async createSeries(
     userId: number,
-    { title, picture, tagIds }: CreateSeriesInput,
+    { title, picture, tagIds, description }: CreateSeriesInput,
   ) {
     title = this.commonService.formatTitle(title);
     const count = await this.seriesRepository.count({ title, author: userId });
@@ -71,6 +71,7 @@ export class SeriesService {
 
     const series = await this.seriesRepository.create({
       title,
+      description,
       slug: this.commonService.generateSlug(title),
       author: userId,
     });
@@ -105,13 +106,10 @@ export class SeriesService {
    */
   public async updateSeries(
     userId: number,
-    { seriesId, title }: UpdateSeriesInput,
+    { seriesId, title, description }: UpdateSeriesInput,
   ): Promise<SeriesEntity> {
     const series = await this.authorsSeriesById(userId, seriesId);
-    title = this.commonService.formatTitle(title);
-    series.title = title;
-    series.slug = this.commonService.generateSlug(title);
-    await this.commonService.saveEntity(this.seriesRepository, series);
+    await this.updateSeriesLogic(series, title, description);
     return series;
   }
 
@@ -410,12 +408,10 @@ export class SeriesService {
   public async adminEditSeries({
     seriesId,
     title,
+    description,
   }: UpdateSeriesInput): Promise<SeriesEntity> {
     const series = await this.seriesById(seriesId);
-    title = this.commonService.formatTitle(title);
-    series.title = title;
-    series.slug = this.commonService.generateSlug(title);
-    await this.commonService.saveEntity(this.seriesRepository, series);
+    await this.updateSeriesLogic(series, title, description);
     return series;
   }
 
@@ -491,6 +487,22 @@ export class SeriesService {
     });
     this.commonService.checkExistence("Series' Tag", tag);
     return tag;
+  }
+
+  private async updateSeriesLogic(
+    series: SeriesEntity,
+    title?: string,
+    description?: string,
+  ) {
+    if (title) {
+      title = this.commonService.formatTitle(title);
+      series.title = title;
+      series.slug = this.commonService.generateSlug(title);
+    }
+
+    if (description) series.description = description;
+
+    await this.commonService.saveEntity(this.seriesRepository, series);
   }
 
   private async updateSeriesPictureLogic(
