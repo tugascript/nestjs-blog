@@ -1,9 +1,11 @@
+import { faker } from '@faker-js/faker';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { CACHE_MANAGER, CacheModule } from '@nestjs/common';
+import { CacheModule, CACHE_MANAGER } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { compare, hash } from 'bcrypt';
 import { Cache } from 'cache-manager';
+import dayjs from 'dayjs';
 import { v4, v5 } from 'uuid';
 import { CommonModule } from '../../common/common.module';
 import { CommonService } from '../../common/common.service';
@@ -13,6 +15,7 @@ import { IJwt, ISingleJwt } from '../../config/interfaces/jwt.interface';
 import { MikroOrmConfig } from '../../config/mikroorm.config';
 import { validationSchema } from '../../config/validation';
 import { EmailModule } from '../../email/email.module';
+import { RoleEnum } from '../../users/enums/role.enum';
 import { UsersModule } from '../../users/users.module';
 import { UsersService } from '../../users/users.service';
 import { AuthService } from '../auth.service';
@@ -22,14 +25,11 @@ import {
   IAccessPayloadResponse,
 } from '../interfaces/access-payload.interface';
 import { IAuthResult } from '../interfaces/auth-result.interface';
+import { ISessionsData } from '../interfaces/sessions-data.interface';
 import {
   ITokenPayload,
   ITokenPayloadResponse,
 } from '../interfaces/token-payload.interface';
-import { faker } from '@faker-js/faker';
-import { ISessionsData } from '../interfaces/sessions-data.interface';
-import dayjs from 'dayjs';
-import { RoleEnum } from '../../users/enums/role.enum';
 
 class ResponseMock {
   public cookies = '';

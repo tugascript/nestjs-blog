@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
-import { CreationEntity } from './creation.entity';
 import { IBase } from '../interfaces/base.interface';
+import { CreationEntity } from './creation.entity';
 
 @Entity({ abstract: true })
 export abstract class LocalBaseEntity extends CreationEntity implements IBase {

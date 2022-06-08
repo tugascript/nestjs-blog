@@ -5,12 +5,12 @@ import {
   OneToMany,
   Property,
 } from '@mikro-orm/core';
+import { IsNotEmpty, Length } from 'class-validator';
 import { ExtendedBaseEntity } from '../../common/entities/extended-base.entity';
+import { UserEntity } from '../../users/entities/user.entity';
+import { ISeries } from '../interfaces/series.interface';
 import { SeriesFollowerEntity } from './series-follower.entity';
 import { SeriesTagEntity } from './series-tag.entity';
-import { ISeries } from '../interfaces/series.interface';
-import { UserEntity } from '../../users/entities/user.entity';
-import { IsNotEmpty, Length } from 'class-validator';
 
 @Entity({ tableName: 'series' })
 export class SeriesEntity extends ExtendedBaseEntity implements ISeries {

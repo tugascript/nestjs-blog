@@ -1,28 +1,21 @@
-import { Module } from '@nestjs/common';
-import { CommentsService } from './comments.service';
-import { CommentsResolver } from './resolvers/comments.resolver';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { CommentEntity } from './entities/comment.entity';
-import { UsersModule } from '../users/users.module';
-import { PostsModule } from '../posts/posts.module';
+import { Module } from '@nestjs/common';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PostsModule } from '../posts/posts.module';
+import { UsersModule } from '../users/users.module';
+import { CommentsResolver } from './comments.resolver';
+import { CommentsService } from './comments.service';
 import { CommentLikeEntity } from './entities/comment-like.entity';
-import { ReplyEntity } from './entities/reply.entity';
-import { ReplyLikeEntity } from './entities/reply-like.entity';
-import { RepliesResolver } from './resolvers/replies.resolver';
+import { CommentEntity } from './entities/comment.entity';
 
 @Module({
   imports: [
-    MikroOrmModule.forFeature([
-      CommentEntity,
-      CommentLikeEntity,
-      ReplyEntity,
-      ReplyLikeEntity,
-    ]),
+    MikroOrmModule.forFeature([CommentEntity, CommentLikeEntity]),
     UsersModule,
     PostsModule,
     NotificationsModule,
   ],
-  providers: [CommentsResolver, RepliesResolver, CommentsService],
+  providers: [CommentsResolver, CommentsService],
+  exports: [CommentsService],
 })
 export class CommentsModule {}

@@ -1,6 +1,6 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { CommentDto } from '../dtos/comment.dto';
 import { IsInt, IsOptional, Length, Min } from 'class-validator';
+import { CommentDto } from '../../comments/dtos/comment.dto';
 import { IReplyInput } from '../interfaces/reply-input.interface';
 
 @InputType('CreateReplyInput')

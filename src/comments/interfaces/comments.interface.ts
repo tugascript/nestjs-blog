@@ -1,9 +1,9 @@
-import { IUser } from '../../users/interfaces/user.interface';
 import { Collection } from '@mikro-orm/core';
+import { IAuthored } from '../../common/interfaces/authored.interface';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { IPost } from '../../posts/interfaces/post.interface';
-import { IReply } from './reply.interface';
-import { IAuthored } from '../../common/interfaces/authored.interface';
+import { IReply } from '../../replies/interfaces/reply.interface';
+import { IUser } from '../../users/interfaces/user.interface';
 
 export interface IComment extends IAuthored {
   content: string;

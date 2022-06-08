@@ -6,13 +6,13 @@ import {
   OneToMany,
   Property,
 } from '@mikro-orm/core';
-import { ExtendedBaseEntity } from '../../common/entities/extended-base.entity';
 import { IsNotEmpty, Length } from 'class-validator';
 import { CommentEntity } from '../../comments/entities/comment.entity';
+import { ExtendedBaseEntity } from '../../common/entities/extended-base.entity';
+import { UserEntity } from '../../users/entities/user.entity';
+import { IPost } from '../interfaces/post.interface';
 import { PostLikeEntity } from './post-like.entity';
 import { PostTagEntity } from './post-tag.entity';
-import { IPost } from '../interfaces/post.interface';
-import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity({ tableName: 'posts' })
 export class PostEntity extends ExtendedBaseEntity implements IPost {

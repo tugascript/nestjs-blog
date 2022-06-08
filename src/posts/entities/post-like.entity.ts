@@ -1,9 +1,9 @@
 import { Entity, ManyToOne, PrimaryKeyType, Unique } from '@mikro-orm/core';
-import { UserEntity } from '../../users/entities/user.entity';
 import { IsNotEmpty } from 'class-validator';
-import { PostEntity } from './post.entity';
 import { CreationEntity } from '../../common/entities/creation.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { IPostLike } from '../interfaces/post-like.interface';
+import { PostEntity } from './post.entity';
 
 @Entity({ tableName: 'post_likes' })
 @Unique({ properties: ['user', 'post'] })

@@ -1,32 +1,32 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { CommentsService } from '../comments.service';
-import { ConfigModule } from '@nestjs/config';
-import { validationSchema } from '../../config/validation';
-import { config } from '../../config/config';
-import { CacheModule } from '@nestjs/common';
-import { getRepositoryToken, MikroOrmModule } from '@mikro-orm/nestjs';
-import { MikroOrmConfig } from '../../config/mikroorm.config';
-import { CommentEntity } from '../entities/comment.entity';
-import { CommentLikeEntity } from '../entities/comment-like.entity';
-import { ReplyEntity } from '../entities/reply.entity';
-import { ReplyLikeEntity } from '../entities/reply-like.entity';
-import { CommonModule } from '../../common/common.module';
-import { UploaderModule } from '../../uploader/uploader.module';
-import { PostsModule } from '../../posts/posts.module';
-import { UsersModule } from '../../users/users.module';
-import { NotificationsModule } from '../../notifications/notifications.module';
-import { PostsService } from '../../posts/posts.service';
-import { CommonService } from '../../common/common.service';
-import { EntityRepository } from '@mikro-orm/sqlite';
 import { faker } from '@faker-js/faker';
+import { getRepositoryToken, MikroOrmModule } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/sqlite';
+import { CacheModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { hash } from 'bcrypt';
-import { UserEntity } from '../../users/entities/user.entity';
+import { CommonModule } from '../../common/common.module';
+import { CommonService } from '../../common/common.service';
+import { QueryOrderEnum } from '../../common/enums/query-order.enum';
+import { LocalMessageType } from '../../common/gql-types/message.type';
 import { fakeName, MockPubSub, picture } from '../../common/tests/mocks.spec';
+import { config } from '../../config/config';
+import { MikroOrmConfig } from '../../config/mikroorm.config';
+import { validationSchema } from '../../config/validation';
+import { NotificationsModule } from '../../notifications/notifications.module';
+import { PostEntity } from '../../posts/entities/post.entity';
+import { PostsModule } from '../../posts/posts.module';
+import { PostsService } from '../../posts/posts.service';
+import { ReplyLikeEntity } from '../../replies/entities/reply-like.entity';
+import { ReplyEntity } from '../../replies/entities/reply.entity';
 import { TagsModule } from '../../tags/tags.module';
 import { TagsService } from '../../tags/tags.service';
-import { PostEntity } from '../../posts/entities/post.entity';
-import { LocalMessageType } from '../../common/gql-types/message.type';
-import { QueryOrderEnum } from '../../common/enums/query-order.enum';
+import { UploaderModule } from '../../uploader/uploader.module';
+import { UserEntity } from '../../users/entities/user.entity';
+import { UsersModule } from '../../users/users.module';
+import { CommentsService } from '../comments.service';
+import { CommentLikeEntity } from '../entities/comment-like.entity';
+import { CommentEntity } from '../entities/comment.entity';
 
 const pubsub = new MockPubSub();
 describe('CommentsService', () => {
@@ -151,7 +151,7 @@ describe('CommentsService', () => {
     });
 
     it('Update Comment', async () => {
-      const comment = await commentsRepository.findOne({ id: commentId });
+      const comment = await commentsService.commentById(commentId);
       const oldBody = comment.content;
 
       const updateComment = await commentsService.updateComment(
@@ -167,7 +167,7 @@ describe('CommentsService', () => {
     });
 
     it('Like Comment', async () => {
-      const comment = await commentsRepository.findOne({ id: commentId });
+      const comment = await commentsService.commentById(commentId);
       expect(await comment.likes.loadCount()).toBe(0);
       const updatedComment = await commentsService.likeComment(
         pubsub,
@@ -181,7 +181,7 @@ describe('CommentsService', () => {
     });
 
     it('Unlike Comment', async () => {
-      const comment = await commentsRepository.findOne({ id: commentId });
+      const comment = await commentsService.commentById(commentId);
       expect(await comment.likes.loadCount()).toBe(1);
       const updatedComment = await commentsService.unlikeComment(
         pubsub,
@@ -202,6 +202,9 @@ describe('CommentsService', () => {
       );
       expect(message).toBeInstanceOf(LocalMessageType);
       expect(message.message).toBe('Comment deleted successfully');
+      await expect(
+        commentsService.commentById(commentId),
+      ).rejects.toThrowError();
     });
 
     it('Filter Comments', async () => {

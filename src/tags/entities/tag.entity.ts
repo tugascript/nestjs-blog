@@ -1,7 +1,7 @@
-import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { Entity, ManyToOne, Property, Unique } from '@mikro-orm/core';
 import { IsNotEmpty, Length, Matches } from 'class-validator';
 import { NAME_REGEX } from '../../common/constants/regex';
+import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { ITag } from '../interfaces/tag.interface';
 

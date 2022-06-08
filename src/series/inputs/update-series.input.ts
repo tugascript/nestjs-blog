@@ -1,8 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { ISeriesInput } from '../interfaces/series-input.interface';
 import { IsOptional, Length, Matches } from 'class-validator';
 import { NAME_REGEX } from '../../common/constants/regex';
 import { SeriesDto } from '../dtos/series.dto';
+import { ISeriesInput } from '../interfaces/series-input.interface';
 
 @InputType('UpdateSeriesInput')
 export abstract class UpdateSeriesInput

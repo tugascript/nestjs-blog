@@ -1,9 +1,9 @@
 import { Collection } from '@mikro-orm/core';
-import { ITag } from '../../tags/interfaces/tag.interface';
-import { IUser } from '../../users/interfaces/user.interface';
+import { IComment } from '../../comments/interfaces/comments.interface';
 import { IExtendedBase } from '../../common/interfaces/extended-base.interface';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
-import { IComment } from '../../comments/interfaces/comments.interface';
+import { ITag } from '../../tags/interfaces/tag.interface';
+import { IUser } from '../../users/interfaces/user.interface';
 
 export interface IPost extends IExtendedBase {
   content: string;

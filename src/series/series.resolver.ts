@@ -1,3 +1,4 @@
+import { UseGuards } from '@nestjs/common';
 import {
   Args,
   Context,
@@ -6,34 +7,33 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { SeriesService } from './series.service';
-import { CreateSeriesInput } from './inputs/create-series.input';
-import { UpdateSeriesInput } from './inputs/update-series.input';
-import { SeriesType } from './gql-types/series.type';
+import { PubSub } from 'mercurius';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
-import { UseGuards } from '@nestjs/common';
-import { PublisherGuard } from '../auth/guards/publisher.guard';
-import { SeriesDto } from './dtos/series.dto';
-import { SeriesEntity } from './entities/series.entity';
-import { LocalMessageType } from '../common/gql-types/message.type';
 import { Public } from '../auth/decorators/public.decorator';
-import { SlugDto } from '../common/dtos/slug.dto';
-import { PaginatedSeriesType } from './gql-types/paginated-series.type';
-import { IPaginated } from '../common/interfaces/paginated.interface';
-import { SeriesTagInput } from './inputs/series-tag.input';
-import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
-import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { PublisherGuard } from '../auth/guards/publisher.guard';
+import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
 import { FilterDto } from '../common/dtos/filter.dto';
+import { SlugDto } from '../common/dtos/slug.dto';
+import { LocalMessageType } from '../common/gql-types/message.type';
+import { IPaginated } from '../common/interfaces/paginated.interface';
+import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
+import { TagEntity } from '../tags/entities/tag.entity';
+import { UserEntity } from '../users/entities/user.entity';
 import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
 import { FilterPostsRelationDto } from './dtos/filter-posts-relation.dto';
-import { TagEntity } from '../tags/entities/tag.entity';
 import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
-import { UserEntity } from '../users/entities/user.entity';
-import { AdminGuard } from '../auth/guards/admin.guard';
-import { PubSub } from 'mercurius';
-import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
+import { SeriesDto } from './dtos/series.dto';
+import { SeriesEntity } from './entities/series.entity';
+import { PaginatedSeriesType } from './gql-types/paginated-series.type';
+import { SeriesType } from './gql-types/series.type';
+import { CreateSeriesInput } from './inputs/create-series.input';
+import { SeriesTagInput } from './inputs/series-tag.input';
+import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
+import { UpdateSeriesInput } from './inputs/update-series.input';
+import { SeriesService } from './series.service';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {

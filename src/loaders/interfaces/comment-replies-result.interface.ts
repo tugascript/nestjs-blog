@@ -1,5 +1,5 @@
 import { EntityDictionary } from '@mikro-orm/core';
-import { IReply } from '../../comments/interfaces/reply.interface';
+import { IReply } from '../../replies/interfaces/reply.interface';
 
 export interface ICommentRepliesResult {
   id: number;

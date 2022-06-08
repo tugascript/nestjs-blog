@@ -6,6 +6,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard } from './auth/guards/auth.guard';
+import { CommentsModule } from './comments/comments.module';
 import { CommonModule } from './common/common.module';
 import { CacheConfig } from './config/cache.config';
 import { config } from './config/config';
@@ -14,14 +15,14 @@ import { MikroOrmConfig } from './config/mikroorm.config';
 import { GraphQLDriver } from './config/utils/graphql.driver';
 import { validationSchema } from './config/validation';
 import { EmailModule } from './email/email.module';
-import { UploaderModule } from './uploader/uploader.module';
-import { UsersModule } from './users/users.module';
-import { PostsModule } from './posts/posts.module';
-import { CommentsModule } from './comments/comments.module';
-import { SeriesModule } from './series/series.module';
-import { TagsModule } from './tags/tags.module';
 import { LoadersModule } from './loaders/loaders.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PostsModule } from './posts/posts.module';
+import { RepliesModule } from './replies/replies.module';
+import { SeriesModule } from './series/series.module';
+import { TagsModule } from './tags/tags.module';
+import { UploaderModule } from './uploader/uploader.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     TagsModule,
     LoadersModule,
     NotificationsModule,
+    RepliesModule,
   ],
   providers: [
     {

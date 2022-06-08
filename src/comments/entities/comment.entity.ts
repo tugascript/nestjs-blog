@@ -7,12 +7,12 @@ import {
   Property,
 } from '@mikro-orm/core';
 import { IsNotEmpty, Length } from 'class-validator';
-import { PostEntity } from '../../posts/entities/post.entity';
-import { ReplyEntity } from './reply.entity';
-import { CommentLikeEntity } from './comment-like.entity';
-import { IComment } from '../interfaces/comments.interface';
-import { UserEntity } from '../../users/entities/user.entity';
 import { LocalBaseEntity } from '../../common/entities/base.entity';
+import { PostEntity } from '../../posts/entities/post.entity';
+import { ReplyEntity } from '../../replies/entities/reply.entity';
+import { UserEntity } from '../../users/entities/user.entity';
+import { IComment } from '../interfaces/comments.interface';
+import { CommentLikeEntity } from './comment-like.entity';
 
 @Entity({ tableName: 'comments' })
 export class CommentEntity extends LocalBaseEntity implements IComment {

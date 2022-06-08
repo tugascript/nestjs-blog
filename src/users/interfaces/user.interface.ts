@@ -1,10 +1,10 @@
-import { IBase } from '../../common/interfaces/base.interface';
-import { OnlineStatusEnum } from '../enums/online-status.enum';
-import { RoleEnum } from '../enums/role.enum';
 import { Collection } from '@mikro-orm/core';
+import { IBase } from '../../common/interfaces/base.interface';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { IPost } from '../../posts/interfaces/post.interface';
 import { ISeries } from '../../series/interfaces/series.interface';
+import { OnlineStatusEnum } from '../enums/online-status.enum';
+import { RoleEnum } from '../enums/role.enum';
 
 export interface IUser extends IBase {
   name: string;

@@ -1,6 +1,6 @@
 import { ArgsType, Field, Int } from '@nestjs/graphql';
-import { FilterDto } from '../../common/dtos/filter.dto';
 import { IsInt, Min } from 'class-validator';
+import { FilterDto } from '../../common/dtos/filter.dto';
 
 @ArgsType()
 export abstract class FilterSeriesPostDto extends FilterDto {

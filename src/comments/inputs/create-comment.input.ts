@@ -1,7 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { ICommentInput } from '../interfaces/comment-input.interface';
 import { Length } from 'class-validator';
 import { PostDto } from '../../posts/dtos/post.dto';
+import { ICommentInput } from '../interfaces/comment-input.interface';
 
 @InputType('CreateCommentInput')
 export abstract class CreateCommentInput

@@ -1,11 +1,11 @@
-import { IPost } from '../interfaces/post.interface';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { ExtendedBaseType } from '../../common/gql-types/extended-base.type';
-import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
-import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { IComment } from 'src/comments/interfaces/comments.interface';
-import { IUser } from '../../users/interfaces/user.interface';
 import { PaginatedCommentsType } from '../../comments/gql-types/paginated-comments.type';
+import { ExtendedBaseType } from '../../common/gql-types/extended-base.type';
+import { IPaginated } from '../../common/interfaces/paginated.interface';
+import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
+import { IUser } from '../../users/interfaces/user.interface';
+import { IPost } from '../interfaces/post.interface';
 
 @ObjectType('Post')
 export class PostType extends ExtendedBaseType implements IPost {

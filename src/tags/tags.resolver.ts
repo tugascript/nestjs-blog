@@ -1,15 +1,15 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { TagsService } from './tags.service';
-import { TagEntity } from './entities/tag.entity';
-import { CreateTagDto } from './dtos/create-tag.dto';
-import { UpdateTagInput } from './inputs/update-tag.input';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
-import { TagType } from './gql-types/tag.type';
-import { TagDto } from './dtos/tag.dto';
 import { UseGuards } from '@nestjs/common';
-import { PublisherGuard } from '../auth/guards/publisher.guard';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { PublisherGuard } from '../auth/guards/publisher.guard';
+import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
+import { CreateTagDto } from './dtos/create-tag.dto';
+import { TagDto } from './dtos/tag.dto';
+import { TagEntity } from './entities/tag.entity';
+import { TagType } from './gql-types/tag.type';
+import { UpdateTagInput } from './inputs/update-tag.input';
+import { TagsService } from './tags.service';
 
 @Resolver(() => TagType)
 export class TagsResolver {

@@ -1,5 +1,5 @@
-import { ISeries } from './series.interface';
 import { ITag } from '../../tags/interfaces/tag.interface';
+import { ISeries } from './series.interface';
 
 export interface ISeriesTag {
   series: ISeries;

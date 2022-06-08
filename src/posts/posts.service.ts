@@ -1,38 +1,38 @@
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreatePostInput } from './inputs/create-post.input';
-import { UpdatePostInput } from './inputs/update-post.input';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { PostEntity } from './entities/post.entity';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { FileUpload } from 'graphql-upload';
+import { PubSub } from 'mercurius';
 import { CommonService } from '../common/common.service';
-import { TagsService } from '../tags/tags.service';
-import { UploaderService } from '../uploader/uploader.service';
-import { RatioEnum } from '../common/enums/ratio.enum';
-import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
-import { LocalMessageType } from '../common/gql-types/message.type';
-import { PostTagInput } from './inputs/post-tag.input';
-import { IPaginated } from '../common/interfaces/paginated.interface';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
 import {
   getQueryCursor,
   QueryCursorEnum,
 } from '../common/enums/query-cursor.enum';
-import { UsersService } from '../users/users.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { PubSub } from 'mercurius';
+import { RatioEnum } from '../common/enums/ratio.enum';
+import { LocalMessageType } from '../common/gql-types/message.type';
+import { IPaginated } from '../common/interfaces/paginated.interface';
 import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
-import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { SeriesService } from '../series/series.service';
+import { TagEntity } from '../tags/entities/tag.entity';
+import { TagsService } from '../tags/tags.service';
+import { UploaderService } from '../uploader/uploader.service';
+import { UserEntity } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
+import { FilterSeriesPostDto } from './dtos/filter-series-post.dto';
 import { PostLikeEntity } from './entities/post-like.entity';
 import { PostTagEntity } from './entities/post-tag.entity';
-import { TagEntity } from '../tags/entities/tag.entity';
-import { FilterPostLikesDto } from './dtos/filter-post-likes.dto';
-import { UserEntity } from '../users/entities/user.entity';
-import { FileUpload } from 'graphql-upload';
-import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
+import { PostEntity } from './entities/post.entity';
+import { CreatePostInput } from './inputs/create-post.input';
+import { PostTagInput } from './inputs/post-tag.input';
+import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
+import { UpdatePostInput } from './inputs/update-post.input';
 
 @Injectable()
 export class PostsService {

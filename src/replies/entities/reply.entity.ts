@@ -7,12 +7,12 @@ import {
   Property,
 } from '@mikro-orm/core';
 import { IsNotEmpty, Length } from 'class-validator';
-import { UserEntity } from '../../users/entities/user.entity';
-import { PostEntity } from '../../posts/entities/post.entity';
-import { CommentEntity } from './comment.entity';
-import { ReplyLikeEntity } from './reply-like.entity';
+import { CommentEntity } from '../../comments/entities/comment.entity';
 import { LocalBaseEntity } from '../../common/entities/base.entity';
+import { PostEntity } from '../../posts/entities/post.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { IReply } from '../interfaces/reply.interface';
+import { ReplyLikeEntity } from './reply-like.entity';
 
 @Entity({ tableName: 'replies' })
 export class ReplyEntity extends LocalBaseEntity implements IReply {

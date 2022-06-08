@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 import { ArgsType, Field } from '@nestjs/graphql';
-import { PaginationDto } from '../../common/dtos/pagination.dto';
 import { IsBoolean } from 'class-validator';
+import { PaginationDto } from '../../common/dtos/pagination.dto';
 
 @ArgsType()
 export abstract class FilterNotificationsDto extends PaginationDto {

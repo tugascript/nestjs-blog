@@ -1,7 +1,7 @@
-import { IReplyInput } from '../interfaces/reply-input.interface';
-import { CommentDto } from '../dtos/comment.dto';
 import { Field, InputType, Int } from '@nestjs/graphql';
 import { IsInt, Length, Min } from 'class-validator';
+import { CommentDto } from '../../comments/dtos/comment.dto';
+import { IReplyInput } from '../interfaces/reply-input.interface';
 
 @InputType('UpdateReplyInput')
 export abstract class UpdateReplyInput

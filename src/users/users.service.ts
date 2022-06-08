@@ -15,22 +15,19 @@ import { RegisterDto } from '../auth/dtos/register.dto';
 import { ISessionsData } from '../auth/interfaces/sessions-data.interface';
 import { ITokenPayload } from '../auth/interfaces/token-payload.interface';
 import { CommonService } from '../common/common.service';
+import { SearchDto } from '../common/dtos/search.dto';
+import { getUserQueryCursor } from '../common/enums/query-cursor.enum';
+import { RatioEnum } from '../common/enums/ratio.enum';
 import { LocalMessageType } from '../common/gql-types/message.type';
 import { IPaginated } from '../common/interfaces/paginated.interface';
-import { tLikeOperator } from '../config/interfaces/jwt.interface';
 import { UploaderService } from '../uploader/uploader.service';
 import { OnlineStatusDto } from './dtos/online-status.dto';
 import { ProfilePictureDto } from './dtos/profile-picture.dto';
 import { UserEntity } from './entities/user.entity';
-import { RatioEnum } from '../common/enums/ratio.enum';
-import { SearchDto } from '../common/dtos/search.dto';
-import { getUserQueryCursor } from '../common/enums/query-cursor.enum';
 import { RoleInput } from './inputs/role.input';
 
 @Injectable()
 export class UsersService {
-  private readonly likeOperator =
-    this.configService.get<tLikeOperator>('likeOperator');
   private readonly wsNamespace = this.configService.get<string>('WS_UUID');
   private readonly wsAccessTime =
     this.configService.get<number>('jwt.wsAccess.time');
@@ -258,7 +255,7 @@ export class UsersService {
     if (search) {
       qb.andWhere({
         name: {
-          [this.likeOperator]: this.commonService.formatSearch(search),
+          $ilike: this.commonService.formatSearch(search),
         },
       });
     }

@@ -1,7 +1,7 @@
-import { UserDto } from '../dtos/user.dto';
 import { Field, InputType } from '@nestjs/graphql';
-import { RoleEnum } from '../enums/role.enum';
 import { IsEnum } from 'class-validator';
+import { UserDto } from '../dtos/user.dto';
+import { RoleEnum } from '../enums/role.enum';
 
 @InputType('RoleInput')
 export abstract class RoleInput extends UserDto {

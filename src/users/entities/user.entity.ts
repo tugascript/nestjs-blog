@@ -19,18 +19,18 @@ import {
   Length,
   Matches,
 } from 'class-validator';
+import { CommentLikeEntity } from '../../comments/entities/comment-like.entity';
+import { CommentEntity } from '../../comments/entities/comment.entity';
 import { NAME_REGEX, SLUG_REGEX } from '../../common/constants/regex';
 import { LocalBaseEntity } from '../../common/entities/base.entity';
+import { PostLikeEntity } from '../../posts/entities/post-like.entity';
+import { PostEntity } from '../../posts/entities/post.entity';
+import { ReplyEntity } from '../../replies/entities/reply.entity';
+import { SeriesFollowerEntity } from '../../series/entities/series-follower.entity';
 import { CredentialsEmbeddable } from '../embeddables/credentials.embeddable';
 import { OnlineStatusEnum } from '../enums/online-status.enum';
 import { RoleEnum } from '../enums/role.enum';
-import { PostLikeEntity } from '../../posts/entities/post-like.entity';
-import { SeriesFollowerEntity } from '../../series/entities/series-follower.entity';
-import { CommentLikeEntity } from '../../comments/entities/comment-like.entity';
 import { IUser } from '../interfaces/user.interface';
-import { PostEntity } from '../../posts/entities/post.entity';
-import { CommentEntity } from '../../comments/entities/comment.entity';
-import { ReplyEntity } from '../../comments/entities/reply.entity';
 
 @Entity({ tableName: 'users' })
 export class UserEntity extends LocalBaseEntity implements IUser {

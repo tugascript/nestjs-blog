@@ -1,10 +1,10 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { ISeriesInput } from '../interfaces/series-input.interface';
-import { ValidatePromise } from 'class-validator';
-import { SeriesDto } from '../dtos/series.dto';
-import { GraphQLUpload } from 'graphql-upload';
 import { Type } from 'class-transformer';
+import { ValidatePromise } from 'class-validator';
+import { GraphQLUpload } from 'graphql-upload';
 import { FileUploadDto } from '../../uploader/dtos/file-upload.dto';
+import { SeriesDto } from '../dtos/series.dto';
+import { ISeriesInput } from '../interfaces/series-input.interface';
 
 @InputType('UpdateSeriesPictureInput')
 export abstract class UpdateSeriesPictureInput

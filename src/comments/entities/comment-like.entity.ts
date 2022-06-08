@@ -1,9 +1,9 @@
 import { Entity, ManyToOne, PrimaryKeyType, Unique } from '@mikro-orm/core';
-import { UserEntity } from '../../users/entities/user.entity';
 import { IsNotEmpty } from 'class-validator';
 import { CreationEntity } from '../../common/entities/creation.entity';
-import { CommentEntity } from './comment.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { ICommentLike } from '../interfaces/comment-like.interface';
+import { CommentEntity } from './comment.entity';
 
 @Entity({ tableName: 'comment_likes' })
 @Unique({ properties: ['user', 'comment'] })

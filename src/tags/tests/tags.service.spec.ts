@@ -1,20 +1,20 @@
 import { faker } from '@faker-js/faker';
-import { Test, TestingModule } from '@nestjs/testing';
-import { CommonService } from '../../common/common.service';
-import { TagsService } from '../tags.service';
-import { EntityRepository } from '@mikro-orm/sqlite';
-import { TagEntity } from '../entities/tag.entity';
-import { ConfigModule } from '@nestjs/config';
-import { validationSchema } from '../../config/validation';
-import { config } from '../../config/config';
-import { CacheModule } from '@nestjs/common';
 import { getRepositoryToken, MikroOrmModule } from '@mikro-orm/nestjs';
-import { MikroOrmConfig } from '../../config/mikroorm.config';
-import { CommonModule } from '../../common/common.module';
-import { UserEntity } from '../../users/entities/user.entity';
+import { EntityRepository } from '@mikro-orm/sqlite';
+import { CacheModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { hash } from 'bcrypt';
 import { v4 as uuidV4 } from 'uuid';
+import { CommonModule } from '../../common/common.module';
+import { CommonService } from '../../common/common.service';
 import { LocalMessageType } from '../../common/gql-types/message.type';
+import { config } from '../../config/config';
+import { MikroOrmConfig } from '../../config/mikroorm.config';
+import { validationSchema } from '../../config/validation';
+import { UserEntity } from '../../users/entities/user.entity';
+import { TagEntity } from '../entities/tag.entity';
+import { TagsService } from '../tags.service';
 
 describe('TagsService', () => {
   let tagsService: TagsService,

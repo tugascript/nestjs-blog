@@ -1,3 +1,5 @@
+import { UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   Args,
   Context,
@@ -7,28 +9,26 @@ import {
   Resolver,
   Subscription,
 } from '@nestjs/graphql';
-import { CommentsService } from '../comments.service';
-import { CreateCommentInput } from '../inputs/create-comment.input';
-import { ConfigService } from '@nestjs/config';
-import { CommentType } from '../gql-types/comment.type';
-import { CommentChangeType } from '../gql-types/comment-change.type';
 import { PubSub } from 'mercurius';
-import { PostDto } from '../../posts/dtos/post.dto';
-import { ICommentChange } from '../interfaces/comment-change.interface';
 import { v5 as uuidV5 } from 'uuid';
-import { CommentDto } from '../dtos/comment.dto';
-import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import { IAccessPayload } from '../../auth/interfaces/access-payload.interface';
-import { LocalMessageType } from '../../common/gql-types/message.type';
-import { CommentEntity } from '../entities/comment.entity';
-import { PaginatedCommentsType } from '../gql-types/paginated-comments.type';
-import { FilterCommentsDto } from '../dtos/filter-comments.dto';
-import { IPaginated } from '../../common/interfaces/paginated.interface';
-import { FilterRelationDto } from '../../common/dtos/filter-relation.dto';
-import { PaginatedUsersType } from '../../users/gql-types/paginated-users.type';
-import { UpdateCommentInput } from '../inputs/update-comment.input';
-import { UseGuards } from '@nestjs/common';
-import { AdminGuard } from '../../auth/guards/admin.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
+import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
+import { LocalMessageType } from '../common/gql-types/message.type';
+import { IPaginated } from '../common/interfaces/paginated.interface';
+import { PostDto } from '../posts/dtos/post.dto';
+import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
+import { CommentsService } from './comments.service';
+import { CommentDto } from './dtos/comment.dto';
+import { FilterCommentsDto } from './dtos/filter-comments.dto';
+import { CommentEntity } from './entities/comment.entity';
+import { CommentChangeType } from './gql-types/comment-change.type';
+import { CommentType } from './gql-types/comment.type';
+import { PaginatedCommentsType } from './gql-types/paginated-comments.type';
+import { CreateCommentInput } from './inputs/create-comment.input';
+import { UpdateCommentInput } from './inputs/update-comment.input';
+import { ICommentChange } from './interfaces/comment-change.interface';
 
 @Resolver(() => CommentType)
 export class CommentsResolver {

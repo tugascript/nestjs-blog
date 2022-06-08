@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { SeriesService } from './series.service';
-import { SeriesResolver } from './series.resolver';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { SeriesEntity } from './entities/series.entity';
+import { Module } from '@nestjs/common';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { TagsModule } from '../tags/tags.module';
+import { UsersModule } from '../users/users.module';
 import { SeriesFollowerEntity } from './entities/series-follower.entity';
 import { SeriesTagEntity } from './entities/series-tag.entity';
-import { UsersModule } from '../users/users.module';
-import { NotificationsModule } from '../notifications/notifications.module';
+import { SeriesEntity } from './entities/series.entity';
+import { SeriesResolver } from './series.resolver';
+import { SeriesService } from './series.service';
 
 @Module({
   imports: [

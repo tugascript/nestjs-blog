@@ -1,8 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { PostDto } from '../dtos/post.dto';
-import { IPostInput } from '../interfaces/post-input.interface';
 import { IsOptional, Length, Matches } from 'class-validator';
 import { NAME_REGEX } from '../../common/constants/regex';
+import { PostDto } from '../dtos/post.dto';
+import { IPostInput } from '../interfaces/post-input.interface';
 
 @InputType()
 export class UpdatePostInput extends PostDto implements Partial<IPostInput> {

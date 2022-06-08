@@ -1,9 +1,9 @@
 import { Collection } from '@mikro-orm/core';
-import { ITag } from '../../tags/interfaces/tag.interface';
 import { IExtendedBase } from '../../common/interfaces/extended-base.interface';
-import { IUser } from '../../users/interfaces/user.interface';
 import { IPaginated } from '../../common/interfaces/paginated.interface';
 import { IPost } from '../../posts/interfaces/post.interface';
+import { ITag } from '../../tags/interfaces/tag.interface';
+import { IUser } from '../../users/interfaces/user.interface';
 
 export interface ISeries extends IExtendedBase {
   description: string;

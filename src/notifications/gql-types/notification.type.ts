@@ -1,15 +1,15 @@
 import { Field, ObjectType } from '@nestjs/graphql';
+import { IComment } from '../../comments/interfaces/comments.interface';
 import { LocalBaseType } from '../../common/gql-types/base.type';
-import { INotification } from '../interfaces/notification.interface';
+import { IPost } from '../../posts/interfaces/post.interface';
+import { IReply } from '../../replies/interfaces/reply.interface';
+import { ISeries } from '../../series/interfaces/series.interface';
 import { UserType } from '../../users/gql-types/user.type';
 import { IUser } from '../../users/interfaces/user.interface';
-import { NotificationTypeEnum } from '../enums/notification-type.enum';
 import { NotificationEntityEnum } from '../enums/notification-entity.enum';
+import { NotificationTypeEnum } from '../enums/notification-type.enum';
+import { INotification } from '../interfaces/notification.interface';
 import { NotificationBodyType } from './notification-body.type';
-import { IComment } from '../../comments/interfaces/comments.interface';
-import { IPost } from '../../posts/interfaces/post.interface';
-import { IReply } from '../../comments/interfaces/reply.interface';
-import { ISeries } from '../../series/interfaces/series.interface';
 
 @ObjectType('Notification')
 export class NotificationType

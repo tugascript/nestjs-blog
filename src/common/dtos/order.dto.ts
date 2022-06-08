@@ -1,7 +1,7 @@
 import { ArgsType, Field } from '@nestjs/graphql';
-import { PaginationDto } from './pagination.dto';
-import { QueryOrderEnum } from '../enums/query-order.enum';
 import { IsEnum } from 'class-validator';
+import { QueryOrderEnum } from '../enums/query-order.enum';
+import { PaginationDto } from './pagination.dto';
 
 @ArgsType()
 export abstract class OrderDto extends PaginationDto {

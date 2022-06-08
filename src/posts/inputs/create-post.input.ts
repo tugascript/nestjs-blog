@@ -1,5 +1,5 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { IPostInput } from '../interfaces/post-input.interface';
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -9,10 +9,10 @@ import {
   Min,
   ValidatePromise,
 } from 'class-validator';
-import { NAME_REGEX } from '../../common/constants/regex';
 import { GraphQLUpload } from 'graphql-upload';
-import { Type } from 'class-transformer';
+import { NAME_REGEX } from '../../common/constants/regex';
 import { FileUploadDto } from '../../uploader/dtos/file-upload.dto';
+import { IPostInput } from '../interfaces/post-input.interface';
 
 @InputType()
 export class CreatePostInput implements IPostInput {

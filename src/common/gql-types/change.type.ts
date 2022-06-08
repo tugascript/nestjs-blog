@@ -1,8 +1,8 @@
 import { Type } from '@nestjs/common';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { ChangeTypeEnum } from '../enums/change-type.enum';
-import { Edge } from './edge.type';
 import { IChange } from '../interfaces/change.interface';
+import { Edge } from './edge.type';
 
 export function Change<T>(classRef: Type<T>): Type<IChange<T>> {
   @ObjectType(`${classRef.name}ChangeEdge`)

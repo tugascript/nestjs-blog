@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { LocalBaseType } from './base.type';
-import { IAuthored } from '../interfaces/authored.interface';
 import { UserType } from '../../users/gql-types/user.type';
+import { IAuthored } from '../interfaces/authored.interface';
+import { LocalBaseType } from './base.type';
 
 @ObjectType({ isAbstract: true })
 export abstract class AuthoredType extends LocalBaseType implements IAuthored {

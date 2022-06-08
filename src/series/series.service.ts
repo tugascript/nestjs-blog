@@ -1,38 +1,38 @@
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateSeriesInput } from './inputs/create-series.input';
-import { UpdateSeriesInput } from './inputs/update-series.input';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { SeriesEntity } from './entities/series.entity';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { FileUpload } from 'graphql-upload';
+import { Knex } from 'knex';
+import { PubSub } from 'mercurius';
 import { CommonService } from '../common/common.service';
-import { UploaderService } from '../uploader/uploader.service';
-import { TagsService } from '../tags/tags.service';
-import { RatioEnum } from '../common/enums/ratio.enum';
-import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
-import { SeriesTagInput } from './inputs/series-tag.input';
-import { IPaginated } from '../common/interfaces/paginated.interface';
+import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
+import { FilterDto } from '../common/dtos/filter.dto';
 import {
   getQueryCursor,
   QueryCursorEnum,
 } from '../common/enums/query-cursor.enum';
+import { RatioEnum } from '../common/enums/ratio.enum';
 import { LocalMessageType } from '../common/gql-types/message.type';
-import { SeriesFollowerEntity } from './entities/series-follower.entity';
-import { FilterDto } from '../common/dtos/filter.dto';
-import { SeriesTagEntity } from './entities/series-tag.entity';
-import { TagEntity } from '../tags/entities/tag.entity';
-import { UsersService } from '../users/users.service';
-import { UserEntity } from '../users/entities/user.entity';
-import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
-import { NotificationsService } from '../notifications/notifications.service';
-import { PubSub } from 'mercurius';
+import { IPaginated } from '../common/interfaces/paginated.interface';
 import { NotificationTypeEnum } from '../notifications/enums/notification-type.enum';
-import { FileUpload } from 'graphql-upload';
-import { ExtendedSearchDto } from '../common/dtos/extended-search.dto';
-import { Knex } from 'knex';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TagEntity } from '../tags/entities/tag.entity';
+import { TagsService } from '../tags/tags.service';
+import { UploaderService } from '../uploader/uploader.service';
+import { UserEntity } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
+import { SeriesFollowerEntity } from './entities/series-follower.entity';
+import { SeriesTagEntity } from './entities/series-tag.entity';
+import { SeriesEntity } from './entities/series.entity';
+import { CreateSeriesInput } from './inputs/create-series.input';
+import { SeriesTagInput } from './inputs/series-tag.input';
+import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
+import { UpdateSeriesInput } from './inputs/update-series.input';
 
 @Injectable()
 export class SeriesService {

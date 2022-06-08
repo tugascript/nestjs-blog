@@ -1,25 +1,25 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { FilterQuery, RequiredEntityData } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { NotificationEntity } from './entities/notification.entity';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { CommonService } from '../common/common.service';
-import { PubSub } from 'mercurius';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PubSub } from 'mercurius';
 import { v5 as uuidV5 } from 'uuid';
+import { CommentEntity } from '../comments/entities/comment.entity';
+import { CommonService } from '../common/common.service';
+import { ChangeTypeEnum } from '../common/enums/change-type.enum';
+import { QueryOrderEnum } from '../common/enums/query-order.enum';
+import { LocalMessageType } from '../common/gql-types/message.type';
+import { IAuthored } from '../common/interfaces/authored.interface';
+import { IPaginated } from '../common/interfaces/paginated.interface';
+import { PostEntity } from '../posts/entities/post.entity';
+import { ReplyEntity } from '../replies/entities/reply.entity';
+import { SeriesEntity } from '../series/entities/series.entity';
+import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
+import { NotificationEntity } from './entities/notification.entity';
+import { NotificationEntityEnum } from './enums/notification-entity.enum';
 import { NotificationTypeEnum } from './enums/notification-type.enum';
 import { INotificationChange } from './interfaces/notification-change.interface';
-import { LocalMessageType } from '../common/gql-types/message.type';
-import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
-import { IPaginated } from '../common/interfaces/paginated.interface';
-import { QueryOrderEnum } from '../common/enums/query-order.enum';
-import { ChangeTypeEnum } from '../common/enums/change-type.enum';
-import { FilterQuery, RequiredEntityData } from '@mikro-orm/core';
-import { ReplyEntity } from '../comments/entities/reply.entity';
-import { CommentEntity } from '../comments/entities/comment.entity';
-import { PostEntity } from '../posts/entities/post.entity';
-import { SeriesEntity } from '../series/entities/series.entity';
-import { IAuthored } from '../common/interfaces/authored.interface';
-import { NotificationEntityEnum } from './enums/notification-entity.enum';
 
 @Injectable()
 export class NotificationsService {

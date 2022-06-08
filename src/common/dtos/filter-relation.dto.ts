@@ -1,6 +1,6 @@
 import { ArgsType, Field, Int } from '@nestjs/graphql';
-import { QueryOrderEnum } from '../enums/query-order.enum';
 import { IsEnum, IsInt, Max, Min } from 'class-validator';
+import { QueryOrderEnum } from '../enums/query-order.enum';
 
 @ArgsType()
 export abstract class FilterRelationDto {

@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-inferrable-types */
-import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { Entity, Enum, ManyToOne, Property } from '@mikro-orm/core';
-import { NotificationTypeEnum } from '../enums/notification-type.enum';
-import { CommentEntity } from '../../comments/entities/comment.entity';
-import { UserEntity } from '../../users/entities/user.entity';
-import { PostEntity } from '../../posts/entities/post.entity';
 import { IsEnum, IsNotEmpty } from 'class-validator';
-import { ReplyEntity } from '../../comments/entities/reply.entity';
+import { CommentEntity } from '../../comments/entities/comment.entity';
+import { LocalBaseEntity } from '../../common/entities/base.entity';
+import { PostEntity } from '../../posts/entities/post.entity';
+import { ReplyEntity } from '../../replies/entities/reply.entity';
 import { SeriesEntity } from '../../series/entities/series.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { NotificationEntityEnum } from '../enums/notification-entity.enum';
+import { NotificationTypeEnum } from '../enums/notification-type.enum';
 import { INotification } from '../interfaces/notification.interface';
 
 @Entity({ tableName: 'notifications' })

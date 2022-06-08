@@ -1,5 +1,5 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { ISeriesInput } from '../interfaces/series-input.interface';
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -9,10 +9,10 @@ import {
   Min,
   ValidatePromise,
 } from 'class-validator';
-import { NAME_REGEX } from '../../common/constants/regex';
 import { GraphQLUpload } from 'graphql-upload';
-import { Type } from 'class-transformer';
+import { NAME_REGEX } from '../../common/constants/regex';
 import { FileUploadDto } from '../../uploader/dtos/file-upload.dto';
+import { ISeriesInput } from '../interfaces/series-input.interface';
 
 @InputType('CreateSeriesInput')
 export abstract class CreateSeriesInput implements ISeriesInput {

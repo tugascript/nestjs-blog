@@ -1,5 +1,5 @@
-import { IPost } from './post.interface';
 import { IUser } from '../../users/interfaces/user.interface';
+import { IPost } from './post.interface';
 
 export interface IPostLike {
   post: IPost;

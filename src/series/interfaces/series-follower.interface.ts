@@ -1,5 +1,5 @@
-import { ISeries } from './series.interface';
 import { IUser } from '../../users/interfaces/user.interface';
+import { ISeries } from './series.interface';
 
 export interface ISeriesFollower {
   series: ISeries;

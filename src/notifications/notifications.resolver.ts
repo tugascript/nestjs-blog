@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import {
   Args,
   Context,
@@ -8,21 +9,20 @@ import {
   Resolver,
   Subscription,
 } from '@nestjs/graphql';
-import { NotificationsService } from './notifications.service';
-import { NotificationType } from './gql-types/notification.type';
-import { ConfigService } from '@nestjs/config';
+import { PubSub } from 'mercurius';
+import { v5 as uuidV5 } from 'uuid';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAccessPayload } from '../auth/interfaces/access-payload.interface';
-import { INotificationChange } from './interfaces/notification-change.interface';
-import { v5 as uuidV5 } from 'uuid';
-import { PubSub } from 'mercurius';
-import { NotificationDto } from './dtos/notification.dto';
-import { PaginatedNotificationsType } from './gql-types/paginated-notifications.type';
-import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
-import { NotificationEntity } from './entities/notification.entity';
 import { IPaginated } from '../common/interfaces/paginated.interface';
-import { NotificationChangeType } from './gql-types/notification-change.type';
+import { FilterNotificationsDto } from './dtos/filter-notifications.dto';
+import { NotificationDto } from './dtos/notification.dto';
+import { NotificationEntity } from './entities/notification.entity';
 import { NotificationBodyType } from './gql-types/notification-body.type';
+import { NotificationChangeType } from './gql-types/notification-change.type';
+import { NotificationType } from './gql-types/notification.type';
+import { PaginatedNotificationsType } from './gql-types/paginated-notifications.type';
+import { INotificationChange } from './interfaces/notification-change.interface';
+import { NotificationsService } from './notifications.service';
 
 @Resolver(() => NotificationType)
 export class NotificationsResolver {

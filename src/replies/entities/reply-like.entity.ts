@@ -1,9 +1,9 @@
 import { Entity, ManyToOne, PrimaryKeyType, Unique } from '@mikro-orm/core';
-import { UserEntity } from '../../users/entities/user.entity';
 import { IsNotEmpty } from 'class-validator';
 import { CreationEntity } from '../../common/entities/creation.entity';
-import { ReplyEntity } from './reply.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { IReplyLike } from '../interfaces/reply-like.interface';
+import { ReplyEntity } from './reply.entity';
 
 @Entity({ tableName: 'reply_likes' })
 @Unique({ properties: ['user', 'reply'] })

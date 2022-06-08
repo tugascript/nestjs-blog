@@ -1,15 +1,15 @@
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { UpdateTagInput } from './inputs/update-tag.input';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { TagEntity } from './entities/tag.entity';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { Knex } from 'knex';
 import { CommonService } from '../common/common.service';
 import { LocalMessageType } from '../common/gql-types/message.type';
-import { Knex } from 'knex';
+import { TagEntity } from './entities/tag.entity';
+import { UpdateTagInput } from './inputs/update-tag.input';
 
 @Injectable()
 export class TagsService {
