@@ -11,7 +11,7 @@ import { CommonService } from '../../common/common.service';
 import { QueryCursorEnum } from '../../common/enums/query-cursor.enum';
 import { QueryOrderEnum } from '../../common/enums/query-order.enum';
 import { LocalMessageType } from '../../common/gql-types/message.type';
-import { fakeName, MockPubSub, picture } from '../../common/tests/mocks.spec';
+import { fakeName, MockPubSub, picture } from '../../common/tests/mocks';
 import { config } from '../../config/config';
 import { MikroOrmConfig } from '../../config/mikroorm.config';
 import { validationSchema } from '../../config/validation';

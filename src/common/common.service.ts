@@ -27,7 +27,7 @@ export class CommonService {
   private readonly buff = Buffer;
 
   private static getOrderBy<T>(
-    cursor: keyof T,
+    cursor: keyof T | string,
     order: QueryOrderEnum,
     innerCursor?: string,
   ): Record<string, QueryOrderEnum | Record<string, QueryOrderEnum>> {
@@ -48,7 +48,7 @@ export class CommonService {
    * Gets the where clause filter logic for the query builder pagination
    */
   private static getFilters<T>(
-    cursor: keyof T,
+    cursor: keyof T | string,
     decoded: string | number,
     order: tOrderEnum | tOppositeOrder,
     innerCursor?: string,
@@ -160,7 +160,7 @@ export class CommonService {
       tempQb.andWhere(
         CommonService.getFilters(cursor, decoded, oppositeOd, innerCursor),
       );
-      prevCount = await tempQb.count(aliasCursor);
+      prevCount = await tempQb.count(aliasCursor, true);
 
       const normalOd = getQueryOrder(order);
       qb.andWhere(
@@ -171,7 +171,7 @@ export class CommonService {
     const cqb = qb.clone();
     const [count, entities]: [number, T[]] = await this.throwInternalError(
       Promise.all([
-        cqb.count(aliasCursor),
+        cqb.count(aliasCursor, true),
         qb
           .select(`${alias}.*`)
           .orderBy(CommonService.getOrderBy(cursor, order, innerCursor))

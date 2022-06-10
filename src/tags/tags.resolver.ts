@@ -28,7 +28,7 @@ export class TagsResolver {
   @Mutation(() => TagType)
   public async updateTag(
     @CurrentUser() user: IAccessPayload,
-    @Args() dto: UpdateTagInput,
+    @Args('input') dto: UpdateTagInput,
   ) {
     return this.tagsService.updateTag(user.id, dto);
   }

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { CacheModule, CACHE_MANAGER } from '@nestjs/common';
+import { CACHE_MANAGER, CacheModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { compare, hash } from 'bcrypt';
@@ -30,6 +30,7 @@ import {
   ITokenPayload,
   ITokenPayloadResponse,
 } from '../interfaces/token-payload.interface';
+import { UploaderModule } from '../../uploader/uploader.module';
 
 class ResponseMock {
   public cookies = '';
@@ -78,12 +79,17 @@ describe('AuthService', () => {
           useClass: MikroOrmConfig,
         }),
         CommonModule,
+        UploaderModule,
       ],
       providers: [
         AuthService,
         {
           provide: 'CommonModule',
           useClass: CommonModule,
+        },
+        {
+          provide: 'UploaderModule',
+          useClass: UploaderModule,
         },
       ],
     }).compile();
@@ -415,9 +421,9 @@ describe('AuthService', () => {
           { id: userId, role: RoleEnum.USER },
           'access',
         );
-        const [id, sessionId] = await authService.generateWsSession(token);
+        const [user, sessionId] = await authService.generateWsSession(token);
 
-        expect(id).toBe(userId);
+        expect(user.id).toBe(userId);
         expect(sessionId).toBeDefined();
       });
 
@@ -499,12 +505,12 @@ describe('AuthService', () => {
           { id: userId, role: RoleEnum.USER },
           'access',
         );
-        const [id, sessionId] = await authService.generateWsSession(token);
-        expect(id).toBe(userId);
+        const [user, sessionId] = await authService.generateWsSession(token);
+        expect(user.id).toBe(userId);
         expect(sessionId).toBeDefined();
 
-        const [id2, sessionId2] = await authService.generateWsSession(token);
-        expect(id2).toBe(userId);
+        const [user2, sessionId2] = await authService.generateWsSession(token);
+        expect(user2.id).toBe(userId);
         expect(sessionId2).toBeDefined();
 
         await authService.closeUserSession({

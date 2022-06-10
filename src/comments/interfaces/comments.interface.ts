@@ -7,7 +7,7 @@ import { IUser } from '../../users/interfaces/user.interface';
 
 export interface IComment extends IAuthored {
   content: string;
-  likes: Collection<any, any> | IPaginated<IUser>;
-  replies: Collection<any, any> | IPaginated<IReply>;
+  likes?: Collection<any, any> | IPaginated<IUser>;
+  replies?: Collection<any, any> | IPaginated<IReply>;
   post: IPost;
 }

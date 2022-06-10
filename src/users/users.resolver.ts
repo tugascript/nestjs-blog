@@ -132,9 +132,11 @@ export class UsersResolver {
     @Parent() user: UserEntity,
     @CurrentUser() accessUser: IAccessPayload,
   ): string | null {
-    return user.id === accessUser.id || accessUser.role === RoleEnum.ADMIN
-      ? user.email
-      : null;
+    return !accessUser ||
+      user.id !== accessUser?.id ||
+      accessUser?.role !== RoleEnum.ADMIN
+      ? null
+      : user.email;
   }
 
   // LOADERS

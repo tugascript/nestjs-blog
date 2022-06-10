@@ -262,7 +262,7 @@ export class UsersService {
 
     return await this.commonService.queryBuilderPagination(
       name,
-      getUserQueryCursor(cursor) as keyof UserEntity,
+      getUserQueryCursor(cursor),
       first,
       order,
       qb,

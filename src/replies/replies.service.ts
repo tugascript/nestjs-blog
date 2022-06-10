@@ -2,7 +2,7 @@ import { profanity } from '@2toad/profanity';
 import { CensorType } from '@2toad/profanity/dist/models';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PubSub } from 'mercurius';
 import { v5 as uuidV5 } from 'uuid';
@@ -54,9 +54,10 @@ export class RepliesService {
   ): Promise<ReplyEntity> {
     const comment = await this.commentsService.commentById(commentId);
     const reply = this.repliesRepository.create({
-      content: profanity.censor(content, CensorType.AllVowels),
-      author: userId,
       comment,
+      author: userId,
+      post: comment.post.id,
+      content: profanity.censor(content, CensorType.AllVowels),
     });
     let recipientId = comment.author.id;
     let notificationType = NotificationTypeEnum.REPLY;
@@ -134,6 +135,14 @@ export class RepliesService {
     { commentId, replyId }: ReplyDto,
   ): Promise<ReplyEntity> {
     const reply = await this.replyByIds(commentId, replyId);
+    const count = await this.replyLikesRepository.count({
+      reply,
+      user: userId,
+    });
+
+    if (count > 0)
+      throw new BadRequestException('You already liked this reply');
+
     const like = this.replyLikesRepository.create({
       user: userId,
       reply,

@@ -8,15 +8,18 @@ import { hash } from 'bcrypt';
 import { RegisterDto } from '../../auth/dtos/register.dto';
 import { CommonModule } from '../../common/common.module';
 import { CommonService } from '../../common/common.service';
-import { QueryCursorEnum } from '../../common/enums/query-cursor.enum';
 import { QueryOrderEnum } from '../../common/enums/query-order.enum';
 import { LocalMessageType } from '../../common/gql-types/message.type';
 import { config } from '../../config/config';
 import { MikroOrmConfig } from '../../config/mikroorm.config';
 import { validationSchema } from '../../config/validation';
 import { UploaderModule } from '../../uploader/uploader.module';
-import { UserEntity } from '../entities/user.entity';
 import { UsersService } from '../users.service';
+import { UserEntity } from '../entities/user.entity';
+import {
+  getUserQueryCursor,
+  QueryCursorEnum,
+} from '../../common/enums/query-cursor.enum';
 
 const PASSWORD = 'Ab123456';
 
@@ -50,6 +53,10 @@ describe('UsersService', () => {
         {
           provide: 'CommonModule',
           useClass: CommonModule,
+        },
+        {
+          provide: 'UploaderModule',
+          useClass: UploaderModule,
         },
       ],
     }).compile();
@@ -95,8 +102,34 @@ describe('UsersService', () => {
   let idToDelete: number;
   describe('findUsers', () => {
     it('should get all users containing the letter a', async () => {
+      jest
+        .spyOn(usersService, 'filterUsers')
+        .mockImplementation(async ({ search, order, cursor, first, after }) => {
+          const name = 'u';
+
+          const qb = usersRepository.createQueryBuilder(name).where({
+            confirmed: true,
+          });
+
+          if (search) {
+            qb.andWhere({
+              name: {
+                $like: commonService.formatSearch(search),
+              },
+            });
+          }
+
+          return await commonService.queryBuilderPagination(
+            name,
+            getUserQueryCursor(cursor) as keyof UserEntity,
+            first,
+            order,
+            qb,
+            after,
+          );
+        });
+
       const paginated = await usersService.filterUsers({
-        search: 'a',
         order: QueryOrderEnum.DESC,
         cursor: QueryCursorEnum.DATE,
         first: 20,
@@ -104,7 +137,24 @@ describe('UsersService', () => {
 
       expect(paginated.edges.length).toBeDefined();
       expect(paginated.pageInfo).toBeDefined();
-      expect(paginated.currentCount).toBeDefined();
+      expect(paginated.currentCount).toBeGreaterThanOrEqual(50);
+      expect(paginated.previousCount).toBe(0);
+      expect(paginated.pageInfo.hasNextPage).toBe(true);
+      expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+
+      const paginated2 = await usersService.filterUsers({
+        order: QueryOrderEnum.DESC,
+        cursor: QueryCursorEnum.DATE,
+        first: 10,
+        after: paginated.pageInfo.endCursor,
+      });
+
+      expect(paginated2.edges.length).toBeDefined();
+      expect(paginated2.pageInfo).toBeDefined();
+      expect(paginated2.currentCount).toBeGreaterThanOrEqual(30);
+      expect(paginated2.previousCount).toBe(20);
+      expect(paginated2.pageInfo.hasNextPage).toBe(true);
+      expect(paginated2.pageInfo.hasPreviousPage).toBe(true);
 
       idToDelete = paginated.edges[0]?.node.id;
     });

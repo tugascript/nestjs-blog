@@ -34,6 +34,7 @@ import { SeriesTagInput } from './inputs/series-tag.input';
 import { UpdateSeriesPictureInput } from './inputs/update-series-picture.input';
 import { UpdateSeriesInput } from './inputs/update-series.input';
 import { SeriesService } from './series.service';
+import { TagType } from '../tags/gql-types/tag.type';
 
 @Resolver(() => SeriesType)
 export class SeriesResolver {
@@ -141,7 +142,7 @@ export class SeriesResolver {
   }
 
   @Public()
-  @Query(() => [TagEntity])
+  @Query(() => [TagType])
   public async seriesTags(@Args() dto: SeriesDto): Promise<TagEntity[]> {
     return this.seriesService.seriesTags(dto.seriesId);
   }

@@ -3,6 +3,7 @@ import { LoadStrategy, Options } from '@mikro-orm/core';
 const config: Options =
   process.env.NODE_ENV !== 'production'
     ? {
+        debug: true,
         type: 'sqlite',
         dbName: 'test.db',
         entities: ['dist/**/*.entity.js', 'dist/**/*.embeddable.js'],

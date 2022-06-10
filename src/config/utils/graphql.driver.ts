@@ -1,9 +1,9 @@
 import { MercuriusDriver } from '@nestjs/mercurius';
-import { FastifyInstance } from 'fastify';
 import { printSchema } from 'graphql';
 import mercurius from 'mercurius';
 import { MercuriusExtendedDriverConfig } from '../interfaces/mercurius-extended-driver-config.interface';
 import { addPlugins } from './add-plugins.util';
+import { NestFastifyApplication } from '@nestjs/platform-fastify';
 
 export class GraphQLDriver extends MercuriusDriver {
   constructor() {
@@ -31,10 +31,11 @@ export class GraphQLDriver extends MercuriusDriver {
     if (platformName !== 'fastify') {
       throw new Error(`No support for current HttpAdapter: ${platformName}`);
     }
-    const app = httpAdapter.getInstance<FastifyInstance>();
-    const { plugins, ...rest } = options;
+    const app = httpAdapter.getInstance<NestFastifyApplication>();
+    const plugins = options.plugins;
+    delete options.plugins;
     await app.register(mercurius, {
-      ...rest,
+      ...options,
     });
     await addPlugins(app, plugins);
   }

@@ -9,7 +9,7 @@ import { CommonModule } from '../../common/common.module';
 import { CommonService } from '../../common/common.service';
 import { QueryOrderEnum } from '../../common/enums/query-order.enum';
 import { LocalMessageType } from '../../common/gql-types/message.type';
-import { fakeName, MockPubSub, picture } from '../../common/tests/mocks.spec';
+import { fakeName, MockPubSub, picture } from '../../common/tests/mocks';
 import { config } from '../../config/config';
 import { MikroOrmConfig } from '../../config/mikroorm.config';
 import { validationSchema } from '../../config/validation';
@@ -17,8 +17,6 @@ import { NotificationsModule } from '../../notifications/notifications.module';
 import { PostEntity } from '../../posts/entities/post.entity';
 import { PostsModule } from '../../posts/posts.module';
 import { PostsService } from '../../posts/posts.service';
-import { ReplyLikeEntity } from '../../replies/entities/reply-like.entity';
-import { ReplyEntity } from '../../replies/entities/reply.entity';
 import { TagsModule } from '../../tags/tags.module';
 import { TagsService } from '../../tags/tags.service';
 import { UploaderModule } from '../../uploader/uploader.module';
@@ -36,8 +34,6 @@ describe('CommentsService', () => {
     tagsService: TagsService,
     commentsRepository: EntityRepository<CommentEntity>,
     commentLikesRepository: EntityRepository<CommentLikeEntity>,
-    repliesRepository: EntityRepository<ReplyEntity>,
-    replyLikesRepository: EntityRepository<ReplyLikeEntity>,
     usersRepository: EntityRepository<UserEntity>;
 
   beforeEach(async () => {
@@ -56,12 +52,7 @@ describe('CommentsService', () => {
           imports: [ConfigModule],
           useClass: MikroOrmConfig,
         }),
-        MikroOrmModule.forFeature([
-          CommentEntity,
-          CommentLikeEntity,
-          ReplyEntity,
-          ReplyLikeEntity,
-        ]),
+        MikroOrmModule.forFeature([CommentEntity, CommentLikeEntity]),
         CommonModule,
         UploaderModule,
         PostsModule,
@@ -92,12 +83,6 @@ describe('CommentsService', () => {
     commentLikesRepository = module.get<EntityRepository<CommentLikeEntity>>(
       getRepositoryToken(CommentLikeEntity),
     );
-    repliesRepository = module.get<EntityRepository<ReplyEntity>>(
-      getRepositoryToken(ReplyEntity),
-    );
-    replyLikesRepository = module.get<EntityRepository<ReplyLikeEntity>>(
-      getRepositoryToken(ReplyLikeEntity),
-    );
     usersRepository = module.get<EntityRepository<UserEntity>>(
       getRepositoryToken(UserEntity),
     );
@@ -119,9 +104,9 @@ describe('CommentsService', () => {
     });
   });
 
-  let commentId: number;
   describe('Comment CRUD', () => {
     let postId: number;
+    let commentId: number;
     it('Create Comment', async () => {
       const tagIds: number[] = [];
 
@@ -253,8 +238,6 @@ describe('CommentsService', () => {
     expect(tagsService).toBeDefined();
     expect(commentsRepository).toBeDefined();
     expect(commentLikesRepository).toBeDefined();
-    expect(repliesRepository).toBeDefined();
-    expect(replyLikesRepository).toBeDefined();
     expect(usersRepository).toBeDefined();
   });
 });

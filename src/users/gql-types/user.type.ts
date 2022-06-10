@@ -12,7 +12,7 @@ export class UserType extends LocalBaseType implements IUser {
   public username!: string;
 
   @Field(() => String, { nullable: true })
-  public email!: string;
+  public email: string;
 
   @Field(() => String, { nullable: true })
   public picture?: string;

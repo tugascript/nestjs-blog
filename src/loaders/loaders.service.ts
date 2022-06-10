@@ -410,7 +410,14 @@ export class LoadersService {
     return async (
       data: ILoader<PostEntity, FilterRelationDto>[],
     ): Promise<IPaginated<CommentEntity>[]> => {
-      return this.basicPaginator(data, PostEntity, CommentEntity, 'post', 'id');
+      return this.basicPaginator(
+        data,
+        PostEntity,
+        CommentEntity,
+        'comments',
+        'post',
+        'id',
+      );
     };
   }
 
@@ -457,6 +464,7 @@ export class LoadersService {
         data,
         CommentEntity,
         ReplyEntity,
+        'replies',
         'comment',
         'id',
       );
@@ -671,6 +679,7 @@ export class LoadersService {
     data: ILoader<T, FilterRelationDto>[],
     parent: Type<T>,
     child: Type<C>,
+    parentRelation: keyof T,
     childRelation: keyof C,
     cursor: keyof C,
   ): Promise<IPaginated<C>[]> {
@@ -682,27 +691,46 @@ export class LoadersService {
     const childId = 'c.id';
     const knex = this.em.getKnex();
     const parentRef = knex.ref(parentId);
+    const parentRel = String(parentRelation);
     const ids = LoadersService.getEntityIds(data);
 
     const countQuery = this.em
       .createQueryBuilder(child, childAlias)
       .count(childId)
-      .where({ [childRelation]: { $in: parentRef } })
+      .where({
+        [childRelation]: parentRef,
+      })
       .as('count');
     const entitiesQuery = this.em
       .createQueryBuilder(child, childAlias)
-      .where({ [childRelation]: { $in: parentRef } })
-      .orderBy({ [cursor]: order })
+      .select(`${childAlias}.id`)
+      .where({
+        [childRelation]: {
+          id: parentRef,
+        },
+      })
       .limit(first)
-      .as('entities');
+      .getKnexQuery();
+
     const raw: IPageResult<C>[] = await this.em
       .createQueryBuilder(parent, 'p')
-      .select([parentId, countQuery, entitiesQuery])
-      .where({ id: { $in: ids } })
+      .select([parentId, countQuery])
+      .leftJoinAndSelect(`p.${parentRel}`, childAlias)
       .groupBy([parentId, childId])
+      .where({
+        id: { $in: ids },
+        [parentRelation]: { $in: entitiesQuery },
+      })
+      .orderBy({ [parentRelation]: { [cursor]: order } })
       .execute();
-
-    return this.getPaginationResults<C>(first, child, cursor, ids, raw);
+    return this.getPaginationResults<C>(
+      first,
+      child,
+      cursor,
+      ids,
+      raw,
+      parentRel,
+    );
   }
 
   /**
@@ -759,7 +787,14 @@ export class LoadersService {
       .groupBy([parentId, 'c.id'])
       .execute();
 
-    return this.getPaginationResults<C>(first, child, cursor, ids, raw);
+    return this.getPaginationResults<C>(
+      first,
+      child,
+      cursor,
+      ids,
+      raw,
+      'entities',
+    );
   }
 
   private getPaginationResults<T extends IBase>(
@@ -768,20 +803,23 @@ export class LoadersService {
     cursor: keyof T,
     ids: number[],
     raw: IPageResult<T>[],
+    relation: string,
   ): IPaginated<T>[] {
     const map = new Map<number, IPaginated<T>>();
 
     for (let i = 0; i < raw.length; i++) {
-      const { id, count, entities } = raw[i];
+      const data = raw[i];
+      if (map.get(data.id)) continue;
+
       const entitiesArr: T[] = [];
 
-      for (let j = 0; j < entities.length; j++) {
-        entitiesArr.push(this.em.map(child, entities[j]));
+      for (let j = 0; j < data[relation].length; j++) {
+        entitiesArr.push(this.em.map(child, data[relation][j]));
       }
 
       map.set(
-        id,
-        this.commonService.paginate(entitiesArr, count, 0, cursor, first),
+        data.id,
+        this.commonService.paginate(entitiesArr, data.count, 0, cursor, first),
       );
     }
 

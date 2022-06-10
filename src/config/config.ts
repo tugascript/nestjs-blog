@@ -52,6 +52,7 @@ export function config(): IConfig {
     },
     db: testing
       ? {
+          debug: true,
           type: 'sqlite',
           dbName: 'test.db',
           entities: ['dist/**/*.entity.js', 'dist/**/*.embeddable.js'],

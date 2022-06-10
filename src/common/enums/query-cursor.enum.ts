@@ -1,6 +1,6 @@
 import { registerEnumType } from '@nestjs/graphql';
-import { IUser } from '../../users/interfaces/user.interface';
-import { IExtendedBase } from '../interfaces/extended-base.interface';
+import { ExtendedBaseEntity } from '../entities/extended-base.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 export enum QueryCursorEnum {
   DATE = 'DATE',
@@ -11,8 +11,10 @@ registerEnumType(QueryCursorEnum, {
   name: 'QueryCursor',
 });
 
-export const getQueryCursor = (cursor: QueryCursorEnum): keyof IExtendedBase =>
+export const getQueryCursor = (
+  cursor: QueryCursorEnum,
+): keyof ExtendedBaseEntity =>
   cursor === QueryCursorEnum.DATE ? 'id' : 'slug';
 
-export const getUserQueryCursor = (cursor: QueryCursorEnum): keyof IUser =>
+export const getUserQueryCursor = (cursor: QueryCursorEnum): keyof UserEntity =>
   cursor === QueryCursorEnum.DATE ? 'id' : 'username';

@@ -9,6 +9,6 @@ export interface IPost extends IExtendedBase {
   content: string;
   published: boolean;
   tags: Collection<any, any> | ITag[];
-  likes: Collection<any, any> | IPaginated<IUser>;
-  comments: Collection<any, any> | IPaginated<IComment>;
+  likes?: Collection<any, any> | IPaginated<IUser>;
+  comments?: Collection<any, any> | IPaginated<IComment>;
 }

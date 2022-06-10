@@ -1,7 +1,4 @@
-import { EntityDictionary } from '@mikro-orm/core';
-
-export interface IPageResult<T> {
+export interface IPageResult<T> extends Record<string, any> {
   id: number;
   count: number;
-  entities: EntityDictionary<T>;
 }

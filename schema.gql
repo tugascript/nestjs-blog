@@ -8,8 +8,10 @@ type Message {
 }
 
 type PageInfo {
+  startCursor: String!
   endCursor: String!
   hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
 }
 
 type User {
@@ -22,6 +24,10 @@ type User {
   picture: String
   onlineStatus: OnlineStatus!
   lastOnline: String!
+  likedPostsCount: Int!
+  followedSeriesCount: Int!
+  likedPosts(order: QueryOrder = ASC, first: Int = 10): PaginatedPosts!
+  followedSeries(order: QueryOrder = ASC, first: Int = 10): PaginatedSeries!
 }
 
 enum OnlineStatus {
@@ -33,40 +39,364 @@ enum OnlineStatus {
   OFFLINE
 }
 
+enum QueryOrder {
+  ASC
+  DESC
+}
+
 type UserTypePageEdge {
   cursor: String!
   node: User!
 }
 
 type PaginatedUsers {
-  totalCount: Int!
+  previousCount: Int!
+  currentCount: Int!
   edges: [UserTypePageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type Tag {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  name: String!
+}
+
+type Post {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  author: User!
+  mute: Boolean
+  title: String!
+  slug: String!
+  picture: String!
+  tags: Tag!
+  content: String!
+  published: Boolean!
+  likesCount: Int!
+  commentsCount: Int!
+  likes(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
+  comments(order: QueryOrder = ASC, first: Int = 10): PaginatedComments!
+}
+
+type PostTypePageEdge {
+  cursor: String!
+  node: Post!
+}
+
+type PaginatedPosts {
+  previousCount: Int!
+  currentCount: Int!
+  edges: [PostTypePageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type Series {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  author: User!
+  mute: Boolean
+  title: String!
+  slug: String!
+  picture: String!
+  tags: Tag!
+  description: String!
+  followers(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
+  followersCount: Int!
+  posts(order: QueryOrder = ASC, first: Int = 10, cursor: QueryCursor = DATE): PaginatedPosts!
+}
+
+enum QueryCursor {
+  DATE
+  ALPHA
+}
+
+type SeriesTypePageEdge {
+  cursor: String!
+  node: Series!
+}
+
+type PaginatedSeries {
+  previousCount: Int!
+  currentCount: Int!
+  edges: [SeriesTypePageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type Comment {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  author: User!
+  mute: Boolean
+  content: String!
+  post: Post!
+  hasLiked: Boolean!
+  likesCount: Int!
+  repliesCount: Int!
+  mention: User
+  replies(order: QueryOrder = ASC, first: Int = 10): PaginatedComments!
+  likes(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
+}
+
+type Reply {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  author: User!
+  mute: Boolean
+  comment: Comment!
+  content: String!
+  likes(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
+  likesCount: Int!
+  mention: User
+  post: Post!
+}
+
+type Notification {
+  id: Int!
+  createdAt: String!
+  updatedAt: String!
+  notificationType: NotificationType!
+  notificationEntity: NotificationEntity!
+  body: NotificationBody!
+  read: Boolean!
+  issuer: User!
+}
+
+enum NotificationType {
+  LIKE
+  FOLLOW
+  COMMENT
+  REPLY
+  MENTION
+}
+
+enum NotificationEntity {
+  SERIES
+  POST
+  COMMENT
+  REPLY
+}
+
+union NotificationBody = Series | Post | Comment | Reply
+
+type NotificationTypeChangeEdge {
+  cursor: String!
+  node: Notification!
+}
+
+type NotificationChange {
+  type: ChangeType!
+  edge: NotificationTypeChangeEdge!
+}
+
+enum ChangeType {
+  NEW
+  UPDATE
+  DELETE
+}
+
+type NotificationTypePageEdge {
+  cursor: String!
+  node: Notification!
+}
+
+type PaginatedNotifications {
+  previousCount: Int!
+  currentCount: Int!
+  edges: [NotificationTypePageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type CommentTypePageEdge {
+  cursor: String!
+  node: Comment!
+}
+
+type PaginatedComments {
+  previousCount: Int!
+  currentCount: Int!
+  edges: [CommentTypePageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type CommentTypeChangeEdge {
+  cursor: String!
+  node: Comment!
+}
+
+type CommentChange {
+  type: ChangeType!
+  edge: CommentTypeChangeEdge!
+}
+
+type ReplyTypePageEdge {
+  cursor: String!
+  node: Reply!
+}
+
+type PaginatedReplies {
+  previousCount: Int!
+  currentCount: Int!
+  edges: [ReplyTypePageEdge!]!
   pageInfo: PageInfo!
 }
 
 type Query {
   me: User!
-  getUser(username: String!): User!
-  findUsers(after: String, first: Int = 10, search: String, cursor: UsersCursor = DATE, order: QueryOrder = DESC): PaginatedUsers!
-}
-
-enum UsersCursor {
-  DATE
-  ALPHABET
-}
-
-enum QueryOrder {
-  ASC
-  DESC
-  asc
-  desc
+  userByUsername(username: String!): User!
+  userById(userId: Int!): User!
+  filterUsers(cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, search: String): PaginatedUsers!
+  postById(postId: Int!): Post!
+  postBySlug(slug: String!): Post!
+  filterPost(search: String, cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, authorId: Int): PaginatedPosts!
+  filterSeriesPosts(cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, seriesId: Int!): PaginatedPosts!
+  postTags(postId: Int!): [Tag!]!
+  postLikes(order: QueryOrder = DESC, after: String, first: Int = 10, postId: Int!): PaginatedUsers!
+  findAllTags: [Tag!]!
+  seriesById(seriesId: Int!): Series!
+  seriesBySlug(slug: String!): Series!
+  filterSeries(search: String, cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, authorId: Int): PaginatedSeries!
+  filterFollowedSeries(order: QueryOrder = DESC, after: String, first: Int = 10, cursor: QueryCursor = DATE): PaginatedSeries!
+  seriesTags(seriesId: Int!): [Tag!]!
+  seriesFollowers(order: QueryOrder = DESC, after: String, first: Int = 10, seriesId: Int!): PaginatedUsers!
+  filterNotifications(after: String, first: Int = 10, unreadOnly: Boolean = false): PaginatedNotifications!
+  filterComments(order: QueryOrder = DESC, after: String, first: Int = 10, postId: Int!): PaginatedComments!
+  filterReplies(order: QueryOrder = DESC, after: String, first: Int = 10, commentId: Int!): PaginatedReplies!
 }
 
 type Mutation {
   updateProfilePicture(picture: Upload!): User!
   updateOnlineStatus(defaultStatus: OnlineStatus!): Message!
   deleteAccount(password: String!): Message!
+  adminUpdateUserRole(input: RoleInput!): User!
+  adminSuspendUser(userId: Int!): User!
+  adminUnsuspendUser(userId: Int!): User!
+  adminDeleteUserPicture(userId: Int!): User!
+  adminDeleteUser(userId: Int!): Message!
+  createPost(input: CreatePostInput!): Post!
+  updatePost(input: UpdatePostInput!): Post!
+  updatePostPicture(input: UpdatePostPictureInput!): Post!
+  addTagToPost(input: PostTagInput!): Post!
+  removeTagFromPost(input: PostTagInput!): Post!
+  likePost(postId: Int!): Post!
+  unlikePost(postId: Int!): Post!
+  deletePost(postId: Int!): Message!
+  adminEditPost(input: UpdatePostInput!): Post!
+  adminEditPostPicture(input: UpdatePostPictureInput!): Post!
+  adminDeletePost(postId: Int!): Message!
+  createTag(name: String!): Tag!
+  updateTag(input: UpdateTagInput!): Tag!
+  deleteTag(tagId: Int!): Tag!
+  adminEditTag(input: UpdateTagInput!): Tag!
+  createSeries(input: CreateSeriesInput!): Series!
+  updateSeries(input: UpdateSeriesInput!): Series!
+  updateSeriesPicture(input: UpdateSeriesPictureInput!): Series!
+  addTagToSeries(input: SeriesTagInput!): Series!
+  removeTagFromSeries(input: SeriesTagInput!): Series!
+  followSeries(seriesId: Int!): Series!
+  unfollowSeries(seriesId: Int!): Series!
+  deleteSeries(seriesId: Int!): Message!
+  adminEditSeries(input: UpdateSeriesInput!): Series!
+  adminEditSeriesPicture(input: UpdateSeriesPictureInput!): Series!
+  adminDeleteSeries(seriesId: Int!): Message!
+  readNotification(notificationId: Int!): Notification!
+  deleteNotification(notificationId: Int!): Notification!
+  createComment(input: CreateCommentInput!): Comment!
+  updateComment(input: UpdateCommentInput!): Comment!
+  likeComment(commentId: Int!): Comment!
+  unlikeComment(commentId: Int!): Comment!
+  deleteComment(commentId: Int!): Message!
+  adminDeleteComment(commentId: Int!): Message!
+  replyToComment(input: CreateReplyInput!): Reply!
+  updateReply(input: UpdateReplyInput!): Reply!
+  likeReply(commentId: Int!, replyId: Int!): Reply!
+  unlikeReply(commentId: Int!, replyId: Int!): Reply!
+  deleteReply(commentId: Int!, replyId: Int!): Message!
+  adminDeleteReply(commentId: Int!, replyId: Int!): Message!
 }
 
 """The `Upload` scalar type represents a file upload."""
 scalar Upload
+
+input RoleInput {
+  role: Role!
+}
+
+enum Role {
+  USER
+  ADMIN
+  PUBLISHER
+}
+
+input CreatePostInput {
+  title: String!
+  picture: Upload!
+  tagIds: [Int!]!
+  content: String!
+}
+
+input UpdatePostInput {
+  title: String
+  content: String
+}
+
+input UpdatePostPictureInput {
+  picture: Upload!
+}
+
+input PostTagInput {
+  tagId: Int!
+}
+
+input UpdateTagInput {
+  name: String!
+}
+
+input CreateSeriesInput {
+  title: String!
+  description: String!
+  picture: Upload!
+  tagIds: [Int!]!
+}
+
+input UpdateSeriesInput {
+  title: String
+  description: String
+}
+
+input UpdateSeriesPictureInput {
+  picture: Upload!
+}
+
+input SeriesTagInput {
+  tagId: Int!
+}
+
+input CreateCommentInput {
+  content: String!
+}
+
+input UpdateCommentInput {
+  content: String!
+}
+
+input CreateReplyInput {
+  replyId: Int
+  content: String!
+}
+
+input UpdateReplyInput {
+  replyId: Int!
+  content: String!
+}
+
+type Subscription {
+  notificationChanges: NotificationChange!
+  commentChanges(postId: Int!): CommentChange!
+  replyChanges(postId: Int!): CommentChange!
+}
