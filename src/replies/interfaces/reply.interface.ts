@@ -12,4 +12,5 @@ export interface IReply extends IAuthored {
   mention?: IUser;
   likesCount?: number;
   likes: Collection<any, any> | IPaginated<IUser>;
+  liked?: boolean;
 }

@@ -27,6 +27,7 @@ import { RoleEnum } from './enums/role.enum';
 import { UseGuards } from '@nestjs/common';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { RoleInput } from './inputs/role.input';
+import { PaginatedCommentsType } from '../comments/gql-types/paginated-comments.type';
 
 @Resolver(() => UserType)
 export class UsersResolver {
@@ -150,6 +151,24 @@ export class UsersResolver {
   @ResolveField('followedSeries', () => PaginatedSeriesType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public getFollowedSeries(@Args() _: FilterRelationDto) {
+    return;
+  }
+
+  @ResolveField('writtenPosts', () => PaginatedPostsType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getWrittenPosts(@Args() _: FilterRelationDto) {
+    return;
+  }
+
+  @ResolveField('writtenSeries', () => PaginatedSeriesType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getWrittenSeries(@Args() _: FilterRelationDto) {
+    return;
+  }
+
+  @ResolveField('writtenComments', () => PaginatedCommentsType)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getWrittenComments(@Args() _: FilterRelationDto) {
     return;
   }
 }

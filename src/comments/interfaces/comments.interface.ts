@@ -10,4 +10,5 @@ export interface IComment extends IAuthored {
   likes?: Collection<any, any> | IPaginated<IUser>;
   replies?: Collection<any, any> | IPaginated<IReply>;
   post: IPost;
+  liked?: boolean;
 }

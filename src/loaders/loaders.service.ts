@@ -5,37 +5,36 @@ import { CommentEntity } from '../comments/entities/comment.entity';
 import { IComment } from '../comments/interfaces/comments.interface';
 import { CommonService } from '../common/common.service';
 import { FilterRelationDto } from '../common/dtos/filter-relation.dto';
-import { getQueryCursor } from '../common/enums/query-cursor.enum';
 import { IAuthored } from '../common/interfaces/authored.interface';
 import { IBase } from '../common/interfaces/base.interface';
 import { ICreation } from '../common/interfaces/creation.interface';
 import { IPaginated } from '../common/interfaces/paginated.interface';
 import { PostLikeEntity } from '../posts/entities/post-like.entity';
-import { PostTagEntity } from '../posts/entities/post-tag.entity';
 import { PostEntity } from '../posts/entities/post.entity';
 import { IPost } from '../posts/interfaces/post.interface';
 import { ReplyLikeEntity } from '../replies/entities/reply-like.entity';
 import { ReplyEntity } from '../replies/entities/reply.entity';
 import { IReply } from '../replies/interfaces/reply.interface';
-import { FilterPostsRelationDto } from '../series/dtos/filter-posts-relation.dto';
 import { SeriesFollowerEntity } from '../series/entities/series-follower.entity';
-import { SeriesTagEntity } from '../series/entities/series-tag.entity';
 import { SeriesEntity } from '../series/entities/series.entity';
 import { ISeries } from '../series/interfaces/series.interface';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { ICountResult } from './interfaces/count-result.interface';
 import { ILoader } from './interfaces/loader.interface';
-import { IPageResult } from './interfaces/page-result.interface';
-import { ISeriesPostsResult } from './interfaces/series-posts-result.interface';
+import { IGqlCtx } from '../common/interfaces/gql-ctx.interface';
+import { contextToUser } from '../common/helpers/context-to-user';
+import { ISeriesFollowedResult } from './interfaces/series-followed-result.interface';
+import { ILikedResult } from './interfaces/liked-result.interface';
+import { QueryOrder } from '@mikro-orm/core';
+import { SeriesTagEntity } from '../series/entities/series-tag.entity';
+import { PostTagEntity } from '../posts/entities/post-tag.entity';
 
 @Injectable()
 export class LoadersService {
   private readonly seriesAlias = 's';
   private readonly seriesTagAlias = 'st';
-  private readonly postAlias = 'p';
   private readonly postTagAlias = 'pt';
-  private readonly tagAlias = 't';
 
   constructor(
     private readonly em: EntityManager,
@@ -116,12 +115,16 @@ export class LoadersService {
    *
    * With the IDs of the relation id array, gets the results of the map.
    */
-  private static getResults<T>(ids: number[], map: Map<number, T>): T[] {
+  private static getResults<T>(
+    ids: number[],
+    map: Map<number, T>,
+    defaultValue: T | null = null,
+  ): T[] {
     const results: T[] = [];
 
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
-      results.push(map.get(id));
+      results.push(map.get(id) ?? defaultValue);
     }
 
     return results;
@@ -138,7 +141,7 @@ export class LoadersService {
       map.set(count.id, count.count);
     }
 
-    return LoadersService.getResults(ids, map);
+    return LoadersService.getResults(ids, map, 0);
   }
 
   public getLoaders() {
@@ -146,9 +149,10 @@ export class LoadersService {
       Series: {
         author: this.authorRelationLoader<ISeries>(),
         tags: this.seriesTagsLoader(),
-        posts: this.seriesPostsLoader(),
+        postsCount: this.seriesPostsCountLoader(),
         followersCount: this.seriesFollowersCountLoader(),
         followers: this.seriesFollowersLoader(),
+        followed: this.seriesFollowedLoader(),
       },
       Post: {
         author: this.authorRelationLoader<IPost>(),
@@ -157,6 +161,7 @@ export class LoadersService {
         likes: this.postLikesLoader(),
         commentsCount: this.postCommentsCountLoader(),
         comments: this.postCommentsLoader(),
+        liked: this.postLikedLoader(),
       },
       Comment: {
         author: this.authorRelationLoader<IComment>(),
@@ -165,18 +170,23 @@ export class LoadersService {
         repliesCount: this.commentRepliesCountLoader(),
         replies: this.commentRepliesLoader(),
         post: this.commentPostLoader(),
+        liked: this.commentLikedLoader(),
       },
       Reply: {
         author: this.authorRelationLoader<IReply>(),
         likesCount: this.replyLikesCountLoader(),
         likes: this.replyLikesLoader(),
         mention: this.replyMentionLoader(),
+        liked: this.replyLikedLoader(),
       },
       User: {
         likedPostsCount: this.userLikedPostsCountLoader(),
         likedPosts: this.userLikedPostsLoader(),
         followedSeriesCount: this.usersFollowedSeriesCountLoader(),
         followedSeries: this.usersFollowedSeriesLoader(),
+        writtenSeries: this.usersWrittenSeriesLoader(),
+        writtenPosts: this.usersWrittenPostsLoader(),
+        writtenComments: this.usersWrittenCommentsLoader(),
       },
     };
   }
@@ -192,7 +202,15 @@ export class LoadersService {
       if (data.length === 0) return [];
 
       const series = LoadersService.getEntities(data);
-      await this.em.populate(series, ['tags', 'tags.tag']);
+      await this.em.populate(series, ['tags', 'tags.tag'], {
+        orderBy: {
+          tags: {
+            tag: {
+              name: QueryOrder.ASC,
+            },
+          },
+        },
+      });
       const tags: TagEntity[][] = [];
 
       for (let i = 0; i < series.length; i++) {
@@ -235,7 +253,7 @@ export class LoadersService {
         data,
         SeriesEntity,
         SeriesFollowerEntity,
-        UserEntity,
+        'followers',
         'series',
         'user',
         'username',
@@ -248,74 +266,80 @@ export class LoadersService {
    *
    * Get posts paginated relation.
    */
-  private seriesPostsLoader() {
-    return async (
-      data: ILoader<SeriesEntity, FilterPostsRelationDto>[],
-    ): Promise<IPaginated<PostEntity>[]> => {
+  private seriesPostsCountLoader() {
+    return async (data: ILoader<SeriesEntity>[]): Promise<number[]> => {
       if (data.length === 0) return [];
 
-      const { cursor, order, first } = data[0].params;
       const ids = LoadersService.getEntityIds(data);
       const knex = this.em.getKnex();
       const seriesId = this.seriesAlias + '.id';
       const seriesRef = knex.ref(seriesId);
-      const seriesTagsQuery = this.em
+
+      const tagsQuery = this.em
         .createQueryBuilder(SeriesTagEntity, this.seriesTagAlias)
-        .select([`${this.seriesTagAlias}.tag_id`])
-        .where({ series: seriesRef })
+        .select(`${this.seriesTagAlias}.tag_id`)
+        .where({
+          series: seriesRef,
+        })
         .getKnexQuery();
-      const postsCountQuery = await this.em
+      const countQuery = this.em
         .createQueryBuilder(PostTagEntity, this.postTagAlias)
-        .count(`${this.postTagAlias}.post_id`)
+        .count(`${this.postTagAlias}.tag_id`, true)
         .where({
           tag: {
-            $in: seriesTagsQuery,
+            $in: tagsQuery,
           },
         })
-        .as('posts_count');
-      const strCursor = getQueryCursor(cursor);
-      const postsQuery = this.em
-        .createQueryBuilder(PostEntity, this.postAlias)
-        .leftJoin(`${this.postAlias}.tags`, this.tagAlias)
-        .select(`${this.postAlias}.*`)
-        .where({
-          tags: {
-            tag: {
-              $in: seriesTagsQuery,
-            },
-          },
-        })
-        .orderBy({
-          [strCursor]: order,
-        })
-        .limit(first)
-        .as('posts');
-      const raw: ISeriesPostsResult[] = await this.em
+        .as('count');
+      const raw: ICountResult[] = await this.em
         .createQueryBuilder(SeriesEntity, this.seriesAlias)
-        .select([seriesId, postsCountQuery, postsQuery])
-        .where({ id: { $in: ids } })
-        .groupBy([seriesId, `${this.postAlias}.id`])
+        .select([seriesId, countQuery])
+        .where({
+          id: {
+            $in: ids,
+          },
+        })
         .execute();
-      const resultMap = new Map<number, IPaginated<PostEntity>>();
 
-      for (let i = 0; i < raw.length; i++) {
-        const { posts, posts_count, id } = raw[i];
-        const entities: PostEntity[] = [];
+      return LoadersService.getCounterResults(ids, raw);
+    };
+  }
 
-        for (let j = 0; j < posts.length; j++) {
-          entities.push(this.em.map(PostEntity, posts[j]));
-        }
+  private seriesFollowedLoader() {
+    return async (
+      data: ILoader<SeriesEntity>[],
+      ctx: IGqlCtx,
+    ): Promise<(boolean | null)[]> => {
+      if (data.length === 0) return [];
 
-        resultMap.set(
-          id,
-          this.commonService.paginate(
-            entities,
-            posts_count,
-            0,
-            strCursor,
-            first,
-          ),
-        );
+      const userId = contextToUser(ctx);
+
+      if (!userId) return new Array(data.length).fill(null);
+
+      const ids = LoadersService.getEntityIds(data);
+      const caseString = `
+        CASE
+          WHEN EXISTS (
+            SELECT 1
+            FROM series_followers 'sf'
+              WHERE 'sf'.series_id = '${this.seriesAlias}'.id
+              AND 'sf'.user_id = ${userId}
+          )
+          THEN 1
+          ELSE 0
+        END AS 'followed'
+      `;
+      const result: ISeriesFollowedResult[] = await this.em
+        .createQueryBuilder(SeriesEntity, this.seriesAlias)
+        .select([`${this.seriesAlias}.id`, caseString])
+        .where({ id: { $in: ids } })
+        .execute();
+      console.log(result);
+      const resultMap = new Map<number, boolean>();
+
+      for (let i = 0; i < result.length; i++) {
+        const { id, followed } = result[i];
+        resultMap.set(id, followed === 1);
       }
 
       return LoadersService.getResults(ids, resultMap);
@@ -382,7 +406,7 @@ export class LoadersService {
         data,
         PostEntity,
         PostLikeEntity,
-        UserEntity,
+        'likes',
         'post',
         'user',
         'username',
@@ -421,6 +445,21 @@ export class LoadersService {
     };
   }
 
+  private postLikedLoader() {
+    return async (
+      data: ILoader<PostEntity>[],
+      ctx: IGqlCtx,
+    ): Promise<(boolean | null)[]> => {
+      return this.getLikedResults(
+        data,
+        ctx,
+        PostEntity,
+        'post_likes',
+        'post_id',
+      );
+    };
+  }
+
   //_________ COMMENTS LOADERS __________
 
   private commentLikesCountLoader() {
@@ -443,7 +482,7 @@ export class LoadersService {
         data,
         CommentEntity,
         CommentLikeEntity,
-        UserEntity,
+        'likes',
         'comment',
         'user',
         'username',
@@ -482,7 +521,22 @@ export class LoadersService {
     };
   }
 
-  //_________ COMMENTS LOADERS __________
+  private commentLikedLoader() {
+    return async (
+      data: ILoader<CommentEntity>[],
+      ctx: IGqlCtx,
+    ): Promise<(boolean | null)[]> => {
+      return this.getLikedResults(
+        data,
+        ctx,
+        CommentEntity,
+        'comment_likes',
+        'comment_id',
+      );
+    };
+  }
+
+  //_________ REPLIES LOADERS __________
 
   private replyLikesCountLoader() {
     return async (data: ILoader<ReplyEntity>[]) => {
@@ -497,15 +551,32 @@ export class LoadersService {
   }
 
   private replyLikesLoader() {
-    return async (data: ILoader<ReplyEntity, FilterRelationDto>[]) => {
+    return async (
+      data: ILoader<ReplyEntity, FilterRelationDto>[],
+    ): Promise<IPaginated<UserEntity>[]> => {
       return this.pivotPaginator(
         data,
         ReplyEntity,
         ReplyLikeEntity,
-        UserEntity,
+        'likes',
         'reply',
         'user',
         'username',
+      );
+    };
+  }
+
+  private replyLikedLoader() {
+    return async (
+      data: ILoader<ReplyEntity>[],
+      ctx: IGqlCtx,
+    ): Promise<(boolean | null)[]> => {
+      return this.getLikedResults(
+        data,
+        ctx,
+        ReplyEntity,
+        'reply_likes',
+        'reply_id',
       );
     };
   }
@@ -541,12 +612,14 @@ export class LoadersService {
   }
 
   private userLikedPostsLoader() {
-    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+    return async (
+      data: ILoader<UserEntity, FilterRelationDto>[],
+    ): Promise<IPaginated<PostEntity>[]> => {
       return this.pivotPaginator(
         data,
         UserEntity,
         PostLikeEntity,
-        PostEntity,
+        'likedPosts',
         'user',
         'post',
         'id',
@@ -566,15 +639,56 @@ export class LoadersService {
     };
   }
 
+  private usersWrittenPostsLoader() {
+    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+      return this.basicPaginator(
+        data,
+        UserEntity,
+        PostEntity,
+        'writtenPosts',
+        'author',
+        'id',
+      );
+    };
+  }
+
+  private usersWrittenSeriesLoader() {
+    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+      return this.basicPaginator(
+        data,
+        UserEntity,
+        SeriesEntity,
+        'writtenSeries',
+        'author',
+        'id',
+      );
+    };
+  }
+
+  private usersWrittenCommentsLoader() {
+    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+      return this.basicPaginator(
+        data,
+        UserEntity,
+        CommentEntity,
+        'writtenComments',
+        'author',
+        'id',
+      );
+    };
+  }
+
   //_________ GENERIC LOADERS __________
 
   private usersFollowedSeriesLoader() {
-    return async (data: ILoader<UserEntity, FilterRelationDto>[]) => {
+    return async (
+      data: ILoader<UserEntity, FilterRelationDto>[],
+    ): Promise<IPaginated<SeriesEntity>[]> => {
       return this.pivotPaginator(
         data,
         UserEntity,
         SeriesFollowerEntity,
-        SeriesEntity,
+        'followedSeries',
         'user',
         'series',
         'id',
@@ -657,7 +771,7 @@ export class LoadersService {
 
     const countQuery = this.em
       .createQueryBuilder(pivot, 'pt')
-      .count(`pt.${strPivotChild}_id`)
+      .count(`pt.${strPivotChild}_id`, true)
       .where({ [pivotParent]: { $in: parentRef } })
       .as('count');
     const raw: ICountResult[] = await this.em
@@ -709,10 +823,10 @@ export class LoadersService {
           id: parentRef,
         },
       })
+      .orderBy({ [cursor]: order })
       .limit(first)
       .getKnexQuery();
-
-    const raw: IPageResult<C>[] = await this.em
+    const results = await this.em
       .createQueryBuilder(parent, 'p')
       .select([parentId, countQuery])
       .leftJoinAndSelect(`p.${parentRel}`, childAlias)
@@ -722,14 +836,28 @@ export class LoadersService {
         [parentRelation]: { $in: entitiesQuery },
       })
       .orderBy({ [parentRelation]: { [cursor]: order } })
-      .execute();
-    return this.getPaginationResults<C>(
-      first,
-      child,
-      cursor,
+      .getResult();
+    const map = new Map<number, IPaginated<C>>();
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+
+      map.set(
+        result.id,
+        this.commonService.paginate(
+          result[parentRelation].getItems(),
+          result.count,
+          0,
+          cursor,
+          first,
+        ),
+      );
+    }
+
+    return LoadersService.getResults(
       ids,
-      raw,
-      parentRel,
+      map,
+      this.commonService.paginate([], 0, 0, cursor, first),
     );
   }
 
@@ -746,7 +874,7 @@ export class LoadersService {
     data: ILoader<T, FilterRelationDto>[],
     parent: Type<T>,
     pivot: Type<P>,
-    child: Type<C>,
+    pivotName: keyof T,
     pivotParent: keyof P,
     pivotChild: keyof P,
     cursor: keyof C,
@@ -754,6 +882,7 @@ export class LoadersService {
     if (data.length === 0) return [];
 
     // Because of runtime
+    const strPivotName = String(pivotName);
     const strPivotChild = String(pivotChild);
     const strPivotParent = String(pivotParent);
 
@@ -765,62 +894,97 @@ export class LoadersService {
 
     const countQuery = this.em
       .createQueryBuilder(pivot, 'pt')
-      .count(`pt.${strPivotChild}_id`)
-      .where({ [strPivotParent]: { $in: parentRef } })
+      .count(`pt.${strPivotChild}_id`, true)
+      .where({ [strPivotParent]: parentRef })
       .as('count');
     const pivotQuery = this.em
       .createQueryBuilder(pivot, 'pt')
-      .select(`pt.${strPivotChild}_id`)
-      .where({ [strPivotParent]: { $in: parentRef } })
-      .getKnexQuery();
-    const entitiesQuery = this.em
-      .createQueryBuilder(child, 'c')
-      .select('c.*')
-      .where({ id: { $in: pivotQuery } })
-      .orderBy({ [cursor]: order })
+      .select('pc.id')
+      .leftJoin(`pt.${strPivotChild}`, 'pc')
+      .where({ [strPivotParent]: parentRef })
+      .orderBy({
+        [strPivotChild]: { [cursor]: order },
+      })
       .limit(first)
-      .as('entities');
-    const raw: IPageResult<C>[] = await this.em
+      .getKnexQuery();
+    const results = await this.em
       .createQueryBuilder(parent, 'p')
-      .select([parentId, countQuery, entitiesQuery])
-      .where({ id: { $in: ids } })
-      .groupBy([parentId, 'c.id'])
-      .execute();
+      .select([parentId, countQuery])
+      .leftJoinAndSelect(`p.${strPivotName}`, 'e')
+      .leftJoinAndSelect(`e.${strPivotChild}`, 'f')
+      .where({
+        id: { $in: ids },
+        [strPivotName]: {
+          [strPivotChild]: { $in: pivotQuery },
+        },
+      })
+      .orderBy({
+        [strPivotName]: {
+          [strPivotChild]: { [cursor]: order },
+        },
+      })
+      .groupBy([`e.${strPivotParent}_id`, 'f.id'])
+      .getResult();
+    const map = new Map<number, IPaginated<C>>();
 
-    return this.getPaginationResults<C>(
-      first,
-      child,
-      cursor,
-      ids,
-      raw,
-      'entities',
-    );
-  }
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      const pivots: P[] = result[strPivotName];
+      const entities: C[] = [];
 
-  private getPaginationResults<T extends IBase>(
-    first: number,
-    child: Type<T>,
-    cursor: keyof T,
-    ids: number[],
-    raw: IPageResult<T>[],
-    relation: string,
-  ): IPaginated<T>[] {
-    const map = new Map<number, IPaginated<T>>();
-
-    for (let i = 0; i < raw.length; i++) {
-      const data = raw[i];
-      if (map.get(data.id)) continue;
-
-      const entitiesArr: T[] = [];
-
-      for (let j = 0; j < data[relation].length; j++) {
-        entitiesArr.push(this.em.map(child, data[relation][j]));
+      for (const pivot of pivots) {
+        entities.push(pivot[strPivotChild]);
       }
 
       map.set(
-        data.id,
-        this.commonService.paginate(entitiesArr, data.count, 0, cursor, first),
+        result.id,
+        this.commonService.paginate(entities, result.count, 0, cursor, first),
       );
+    }
+
+    return LoadersService.getResults(
+      ids,
+      map,
+      this.commonService.paginate([], 0, 0, cursor, first),
+    );
+  }
+
+  private async getLikedResults<T extends IBase>(
+    data: ILoader<T>[],
+    ctx: IGqlCtx,
+    parent: Type<T>,
+    pivotTable: string,
+    tableColumn: string,
+  ): Promise<(boolean | null)[]> {
+    if (data.length === 0) return [];
+
+    const userId = contextToUser(ctx);
+
+    if (!userId) return new Array(data.length).fill(null);
+
+    const ids = LoadersService.getEntityIds(data);
+    const caseString = `
+        CASE
+          WHEN EXISTS (
+            SELECT 1
+            FROM ${pivotTable} 'pt'
+              WHERE 'pt'.${tableColumn} = 'p'.id
+              AND pt.user_id = ${userId}
+          )
+          THEN 1
+          ELSE 0
+        END AS 'liked'
+      `;
+    const raw: ILikedResult[] = await this.em
+      .createQueryBuilder(parent, 'p')
+      .select(['p.id', caseString])
+      .where({ id: { $in: ids } })
+      .execute();
+    const map = new Map<number, boolean>();
+
+    for (let i = 0; i < raw.length; i++) {
+      const { id, liked } = raw[i];
+      map.set(id, liked === 1);
     }
 
     return LoadersService.getResults(ids, map);

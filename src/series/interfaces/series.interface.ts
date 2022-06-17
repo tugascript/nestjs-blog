@@ -11,4 +11,5 @@ export interface ISeries extends IExtendedBase {
   followers: Collection<any, any> | IPaginated<IUser>;
   followersCount?: number;
   posts?: IPaginated<IPost>;
+  followed?: boolean;
 }

@@ -10,9 +10,15 @@ export class SeriesType extends ExtendedBaseType implements ISeries {
   @Field(() => String)
   public description: string;
 
+  @Field(() => Int)
+  public postsCount: number;
+
   @Field(() => PaginatedUsersType)
   public followers: IPaginated<IUser>;
 
   @Field(() => Int)
   public followersCount: number;
+
+  @Field(() => Boolean, { nullable: true })
+  public followed?: boolean;
 }

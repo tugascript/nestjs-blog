@@ -19,11 +19,9 @@ import { FilterDto } from '../common/dtos/filter.dto';
 import { SlugDto } from '../common/dtos/slug.dto';
 import { LocalMessageType } from '../common/gql-types/message.type';
 import { IPaginated } from '../common/interfaces/paginated.interface';
-import { PaginatedPostsType } from '../posts/gql-types/paginated-posts.type';
 import { TagEntity } from '../tags/entities/tag.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { PaginatedUsersType } from '../users/gql-types/paginated-users.type';
-import { FilterPostsRelationDto } from './dtos/filter-posts-relation.dto';
 import { FilterSeriesFollowersDto } from './dtos/filter-series-followers.dto';
 import { SeriesDto } from './dtos/series.dto';
 import { SeriesEntity } from './entities/series.entity';
@@ -182,12 +180,6 @@ export class SeriesResolver {
   }
 
   // RESOLVE FIELDS FOR LOADERS
-
-  @ResolveField('posts', () => PaginatedPostsType)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public getPosts(@Args() _: FilterPostsRelationDto) {
-    return;
-  }
 
   @ResolveField('followers', () => PaginatedUsersType)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

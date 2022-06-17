@@ -23,4 +23,7 @@ export class CommentType extends AuthoredType implements IComment {
 
   @Field(() => UserType, { nullable: true })
   public mention?: UserType;
+
+  @Field(() => Boolean, { nullable: true })
+  public liked?: boolean;
 }

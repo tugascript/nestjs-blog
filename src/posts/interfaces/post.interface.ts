@@ -11,4 +11,5 @@ export interface IPost extends IExtendedBase {
   tags: Collection<any, any> | ITag[];
   likes?: Collection<any, any> | IPaginated<IUser>;
   comments?: Collection<any, any> | IPaginated<IComment>;
+  liked?: boolean;
 }

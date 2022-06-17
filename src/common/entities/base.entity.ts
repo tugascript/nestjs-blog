@@ -9,4 +9,8 @@ export abstract class LocalBaseEntity extends CreationEntity implements IBase {
 
   @Property({ onUpdate: () => new Date() })
   public updatedAt: Date = new Date();
+
+  // For Pagination Loaders
+  @Property({ persist: false, nullable: true })
+  public count?: number;
 }

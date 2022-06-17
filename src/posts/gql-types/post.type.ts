@@ -15,4 +15,7 @@ export class PostType extends ExtendedBaseType implements IPost {
 
   @Field(() => Int)
   public commentsCount: number;
+
+  @Field(() => Boolean, { nullable: true })
+  public liked?: boolean;
 }

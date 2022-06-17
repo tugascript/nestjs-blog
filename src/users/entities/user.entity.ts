@@ -21,7 +21,11 @@ import {
 } from 'class-validator';
 import { CommentLikeEntity } from '../../comments/entities/comment-like.entity';
 import { CommentEntity } from '../../comments/entities/comment.entity';
-import { NAME_REGEX, SLUG_REGEX } from '../../common/constants/regex';
+import {
+  BCRYPT_HASH,
+  NAME_REGEX,
+  SLUG_REGEX,
+} from '../../common/constants/regex';
 import { LocalBaseEntity } from '../../common/entities/base.entity';
 import { PostLikeEntity } from '../../posts/entities/post-like.entity';
 import { PostEntity } from '../../posts/entities/post.entity';
@@ -31,6 +35,7 @@ import { CredentialsEmbeddable } from '../embeddables/credentials.embeddable';
 import { OnlineStatusEnum } from '../enums/online-status.enum';
 import { RoleEnum } from '../enums/role.enum';
 import { IUser } from '../interfaces/user.interface';
+import { SeriesEntity } from '../../series/entities/series.entity';
 
 @Entity({ tableName: 'users' })
 export class UserEntity extends LocalBaseEntity implements IUser {
@@ -69,8 +74,10 @@ export class UserEntity extends LocalBaseEntity implements IUser {
   @IsUrl()
   public picture?: string;
 
-  @Property()
+  @Property({ columnType: 'varchar(60)' })
   @IsString()
+  @Length(59, 60)
+  @Matches(BCRYPT_HASH)
   public password!: string;
 
   @Enum({
@@ -133,6 +140,12 @@ export class UserEntity extends LocalBaseEntity implements IUser {
   @OneToMany(() => CommentLikeEntity, (l) => l.user)
   public likedComments: Collection<CommentLikeEntity, UserEntity> =
     new Collection<CommentLikeEntity, UserEntity>(this);
+
+  @OneToMany(() => SeriesEntity, (s) => s.author)
+  public writtenSeries: Collection<SeriesEntity, UserEntity> = new Collection<
+    SeriesEntity,
+    UserEntity
+  >(this);
 
   @OneToMany(() => PostEntity, (p) => p.author)
   public writtenPosts: Collection<PostEntity, UserEntity> = new Collection<
