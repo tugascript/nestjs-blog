@@ -32,6 +32,8 @@ import { v4 } from 'uuid';
 import { CommentEntity } from '../../comments/entities/comment.entity';
 import { CommentLikeEntity } from '../../comments/entities/comment-like.entity';
 import { PostLikeEntity } from '../../posts/entities/post-like.entity';
+import { ReplyEntity } from '../../replies/entities/reply.entity';
+import { ReplyLikeEntity } from '../../replies/entities/reply-like.entity';
 
 describe('LoadersService', () => {
   let loadersService: LoadersService,
@@ -658,6 +660,456 @@ describe('LoadersService', () => {
       for (let i = 0; i < liked.length; i++) {
         const post = posts[i];
         expect(liked[i]).toBe(post.author.id !== userIds[0]);
+      }
+    });
+  });
+
+  describe('Replies Creation', () => {
+    const replies: ReplyEntity[] = [];
+    it('Should create replies', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+
+      for (const comment of comments) {
+        for (const userId of userIds) {
+          replies.push(
+            em.create(ReplyEntity, {
+              post: comment.post.id,
+              comment: comment.id,
+              author: userId,
+              content: faker.lorem.words(2),
+            }),
+          );
+        }
+      }
+
+      await em.persistAndFlush(replies);
+    });
+
+    it('Should like replies', async () => {
+      const replyLikes: ReplyLikeEntity[] = [];
+
+      for (const reply of replies) {
+        for (const userId of userIds) {
+          if (reply.author.id !== userId) {
+            replyLikes.push(
+              em.create(ReplyLikeEntity, {
+                reply: reply.id,
+                user: userId,
+              }),
+            );
+          }
+        }
+      }
+
+      await em.persistAndFlush(replyLikes);
+    });
+  });
+
+  describe('Comments Loaders', () => {
+    it('Should load authors', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<CommentEntity>[] = comments.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+
+      for (const comment of comments) {
+        expect(comment.author.id).toBeDefined();
+        expect(comment.author.username).toBeUndefined();
+      }
+
+      const authors = await loadersService.getLoaders().Comment.author(data);
+
+      for (const author of authors) {
+        expect(author.id).toBeDefined();
+        expect(author.username).toBeDefined();
+      }
+    });
+
+    it('Should load posts', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<CommentEntity>[] = comments.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+
+      for (const comment of comments) {
+        expect(comment.post.id).toBeDefined();
+        expect(comment.post.content).toBeUndefined();
+      }
+
+      const posts = await loadersService.getLoaders().Comment.post(data);
+
+      for (const post of posts) {
+        expect(post.id).toBeDefined();
+        expect(post.content).toBeDefined();
+      }
+    });
+
+    it('Should load likes', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<CommentEntity, FilterRelationDto>[] = comments.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 2,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const likes = await loadersService.getLoaders().Comment.likes(data);
+
+      for (const paginated of likes) {
+        expect(paginated.edges.length).toBe(2);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(9);
+      }
+    });
+
+    it('Should load likes count', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: { $in: userIds },
+      });
+      const data: ILoader<CommentEntity>[] = comments.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+      const likesCount = await loadersService
+        .getLoaders()
+        .Comment.likesCount(data);
+
+      for (const count of likesCount) {
+        expect(count).toBe(9);
+      }
+    });
+
+    it('Should load liked', async () => {
+      const ctx: Partial<IGqlCtx> = {
+        ws: {
+          sessionId: v4(),
+          role: RoleEnum.PUBLISHER,
+          id: userIds[0],
+        },
+      };
+      const comments = await em.find(CommentEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<CommentEntity>[] = comments.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+
+      const liked = await loadersService
+        .getLoaders()
+        .Comment.liked(data, ctx as any);
+
+      for (let i = 0; i < liked.length; i++) {
+        const comment = comments[i];
+        expect(liked[i]).toBe(comment.author.id !== userIds[0]);
+      }
+    });
+
+    it('Should load Replies', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<CommentEntity, FilterRelationDto>[] = comments.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 3,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const replies = await loadersService.getLoaders().Comment.replies(data);
+
+      for (const paginated of replies) {
+        expect(paginated.edges.length).toBe(3);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(10);
+      }
+    });
+
+    it('Should load Replies count', async () => {
+      const comments = await em.find(CommentEntity, {
+        author: { $in: userIds },
+      });
+      const data: ILoader<CommentEntity>[] = comments.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+      const repliesCount = await loadersService
+        .getLoaders()
+        .Comment.repliesCount(data);
+
+      for (const count of repliesCount) {
+        expect(count).toBe(10);
+      }
+    });
+  });
+
+  describe('Replies Loaders', () => {
+    it('Should load authors', async () => {
+      const replies = await em.find(ReplyEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<ReplyEntity>[] = replies.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+
+      for (const reply of replies) {
+        expect(reply.author.id).toBeDefined();
+        expect(reply.author.username).toBeUndefined();
+      }
+
+      const authors = await loadersService.getLoaders().Reply.author(data);
+
+      for (const author of authors) {
+        expect(author.id).toBeDefined();
+        expect(author.username).toBeDefined();
+      }
+    });
+
+    it('Should load likes', async () => {
+      const replies = await em.find(ReplyEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<ReplyEntity, FilterRelationDto>[] = replies.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 2,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const likes = await loadersService.getLoaders().Reply.likes(data);
+
+      for (const paginated of likes) {
+        expect(paginated.edges.length).toBe(2);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(9);
+      }
+    });
+
+    it('Should load likes count', async () => {
+      const replies = await em.find(ReplyEntity, {
+        author: { $in: userIds },
+      });
+      const data: ILoader<ReplyEntity>[] = replies.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+      const likesCount = await loadersService
+        .getLoaders()
+        .Reply.likesCount(data);
+
+      for (const count of likesCount) {
+        expect(count).toBe(9);
+      }
+    });
+
+    it('Should load liked', async () => {
+      const ctx: Partial<IGqlCtx> = {
+        ws: {
+          sessionId: v4(),
+          role: RoleEnum.PUBLISHER,
+          id: userIds[0],
+        },
+      };
+      const replies = await em.find(ReplyEntity, {
+        author: {
+          $in: userIds,
+        },
+      });
+      const data: ILoader<ReplyEntity>[] = replies.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+
+      const liked = await loadersService
+        .getLoaders()
+        .Reply.liked(data, ctx as any);
+
+      for (let i = 0; i < liked.length; i++) {
+        const comment = replies[i];
+        expect(liked[i]).toBe(comment.author.id !== userIds[0]);
+      }
+    });
+  });
+
+  describe('Users Loaders', () => {
+    it('Should liked posts', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity, FilterRelationDto>[] = users.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 10,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const likedPosts = await loadersService
+        .getLoaders()
+        .User.likedPosts(data);
+
+      for (const paginated of likedPosts) {
+        expect(paginated.edges.length).toBe(10);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(45);
+      }
+    });
+
+    it('Should load liked posts count', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity>[] = users.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+      const likedPostsCount = await loadersService
+        .getLoaders()
+        .User.likedPostsCount(data);
+
+      for (const count of likedPostsCount) {
+        expect(count).toBe(45);
+      }
+    });
+
+    it('Should load followed series', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity, FilterRelationDto>[] = users.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 7,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const followedSeries = await loadersService
+        .getLoaders()
+        .User.followedSeries(data);
+
+      for (const paginated of followedSeries) {
+        expect(paginated.edges.length).toBe(7);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(45);
+      }
+    });
+
+    it('Should load followed series count', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity>[] = users.map((obj) => ({
+        obj,
+        params: undefined,
+      }));
+      const followedSeriesCount = await loadersService
+        .getLoaders()
+        .User.followedSeriesCount(data);
+
+      for (const count of followedSeriesCount) {
+        expect(count).toBe(45);
+      }
+    });
+
+    it('Should load written series', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity, FilterRelationDto>[] = users.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 5,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const writtenSeries = await loadersService
+        .getLoaders()
+        .User.writtenSeries(data);
+
+      for (const paginated of writtenSeries) {
+        expect(paginated.edges.length).toBe(5);
+        expect(paginated.pageInfo.hasNextPage).toBe(false);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(5);
+      }
+    });
+
+    it('Should load written posts', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity, FilterRelationDto>[] = users.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 4,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const writtenPosts = await loadersService
+        .getLoaders()
+        .User.writtenPosts(data);
+
+      for (const paginated of writtenPosts) {
+        expect(paginated.edges.length).toBe(4);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(5);
+      }
+    });
+
+    it('Should load written comments', async () => {
+      const users = await em.find(UserEntity, { id: { $in: userIds } });
+      const data: ILoader<UserEntity, FilterRelationDto>[] = users.map(
+        (obj) => ({
+          obj,
+          params: {
+            first: 25,
+            order: QueryOrderEnum.ASC,
+          },
+        }),
+      );
+      const writtenComments = await loadersService
+        .getLoaders()
+        .User.writtenComments(data);
+
+      for (const paginated of writtenComments) {
+        expect(paginated.edges.length).toBe(25);
+        expect(paginated.pageInfo.hasNextPage).toBe(true);
+        expect(paginated.pageInfo.hasPreviousPage).toBe(false);
+        expect(paginated.currentCount).toBe(50);
       }
     });
   });

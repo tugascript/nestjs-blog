@@ -334,7 +334,6 @@ export class LoadersService {
         .select([`${this.seriesAlias}.id`, caseString])
         .where({ id: { $in: ids } })
         .execute();
-      console.log(result);
       const resultMap = new Map<number, boolean>();
 
       for (let i = 0; i < result.length; i++) {
@@ -592,7 +591,7 @@ export class LoadersService {
       const results: (UserEntity | null)[] = [];
 
       for (let i = 0; i < replies.length; i++) {
-        results.push(replies[i].mention ?? null);
+        results.push(replies[i]?.mention ?? null);
       }
 
       return results;
