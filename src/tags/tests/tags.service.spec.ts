@@ -130,7 +130,7 @@ describe('TagsService', () => {
 
     it('Find Tags By Ids', async () => {
       await expect(tagsService.findTagsByIds(userId, ids)).rejects.toThrowError(
-        'One or more tags do not exist',
+        'One or more tags were not found',
       );
       ids.shift();
       const tags = await tagsService.findTagsByIds(userId, ids);

@@ -87,6 +87,7 @@ export class NotificationsService {
     await this.commonService.saveEntity(
       this.notificationsRepository,
       notification,
+      true,
     );
     pubsub.publish<INotificationChange>({
       topic: uuidV5(

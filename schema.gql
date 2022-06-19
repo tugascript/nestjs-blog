@@ -28,6 +28,9 @@ type User {
   followedSeriesCount: Int!
   likedPosts(order: QueryOrder = ASC, first: Int = 10): PaginatedPosts!
   followedSeries(order: QueryOrder = ASC, first: Int = 10): PaginatedSeries!
+  writtenPosts(order: QueryOrder = ASC, first: Int = 10): PaginatedPosts!
+  writtenSeries(order: QueryOrder = ASC, first: Int = 10): PaginatedSeries!
+  writtenComments(order: QueryOrder = ASC, first: Int = 10): PaginatedComments!
 }
 
 enum OnlineStatus {
@@ -77,6 +80,7 @@ type Post {
   published: Boolean!
   likesCount: Int!
   commentsCount: Int!
+  liked: Boolean
   likes(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
   comments(order: QueryOrder = ASC, first: Int = 10): PaginatedComments!
 }
@@ -104,14 +108,10 @@ type Series {
   picture: String!
   tags: Tag!
   description: String!
+  postsCount: Int!
   followers(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
   followersCount: Int!
-  posts(order: QueryOrder = ASC, first: Int = 10, cursor: QueryCursor = DATE): PaginatedPosts!
-}
-
-enum QueryCursor {
-  DATE
-  ALPHA
+  followed: Boolean
 }
 
 type SeriesTypePageEdge {
@@ -138,8 +138,21 @@ type Comment {
   likesCount: Int!
   repliesCount: Int!
   mention: User
+  liked: Boolean
   replies(order: QueryOrder = ASC, first: Int = 10): PaginatedComments!
   likes(order: QueryOrder = ASC, first: Int = 10): PaginatedUsers!
+}
+
+type CommentTypePageEdge {
+  cursor: String!
+  node: Comment!
+}
+
+type PaginatedComments {
+  previousCount: Int!
+  currentCount: Int!
+  edges: [CommentTypePageEdge!]!
+  pageInfo: PageInfo!
 }
 
 type Reply {
@@ -154,6 +167,7 @@ type Reply {
   likesCount: Int!
   mention: User
   post: Post!
+  liked: Boolean
 }
 
 type Notification {
@@ -212,18 +226,6 @@ type PaginatedNotifications {
   pageInfo: PageInfo!
 }
 
-type CommentTypePageEdge {
-  cursor: String!
-  node: Comment!
-}
-
-type PaginatedComments {
-  previousCount: Int!
-  currentCount: Int!
-  edges: [CommentTypePageEdge!]!
-  pageInfo: PageInfo!
-}
-
 type CommentTypeChangeEdge {
   cursor: String!
   node: Comment!
@@ -267,6 +269,11 @@ type Query {
   filterNotifications(after: String, first: Int = 10, unreadOnly: Boolean = false): PaginatedNotifications!
   filterComments(order: QueryOrder = DESC, after: String, first: Int = 10, postId: Int!): PaginatedComments!
   filterReplies(order: QueryOrder = DESC, after: String, first: Int = 10, commentId: Int!): PaginatedReplies!
+}
+
+enum QueryCursor {
+  DATE
+  ALPHA
 }
 
 type Mutation {
