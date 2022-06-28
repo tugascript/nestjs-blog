@@ -5,8 +5,9 @@ import { FastifyReply } from 'fastify';
 // Because of nginx
 @Controller()
 export class AppController {
-  constructor(private readonly configService: ConfigService) {}
   private readonly port = this.configService.get<number>('port');
+
+  constructor(private readonly configService: ConfigService) {}
 
   @Get()
   public getInitialRoute() {

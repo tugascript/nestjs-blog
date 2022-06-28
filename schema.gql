@@ -331,6 +331,7 @@ type Mutation {
 scalar Upload
 
 input RoleInput {
+  userId: Int!
   role: Role!
 }
 
@@ -348,19 +349,23 @@ input CreatePostInput {
 }
 
 input UpdatePostInput {
+  postId: Int!
   title: String
   content: String
 }
 
 input UpdatePostPictureInput {
+  postId: Int!
   picture: Upload!
 }
 
 input PostTagInput {
+  postId: Int!
   tagId: Int!
 }
 
 input UpdateTagInput {
+  tagId: Int!
   name: String!
 }
 
@@ -372,32 +377,39 @@ input CreateSeriesInput {
 }
 
 input UpdateSeriesInput {
+  seriesId: Int!
   title: String
   description: String
 }
 
 input UpdateSeriesPictureInput {
+  seriesId: Int!
   picture: Upload!
 }
 
 input SeriesTagInput {
+  seriesId: Int!
   tagId: Int!
 }
 
 input CreateCommentInput {
+  postId: Int!
   content: String!
 }
 
 input UpdateCommentInput {
+  commentId: Int!
   content: String!
 }
 
 input CreateReplyInput {
+  commentId: Int!
   replyId: Int
   content: String!
 }
 
 input UpdateReplyInput {
+  commentId: Int!
   replyId: Int!
   content: String!
 }
