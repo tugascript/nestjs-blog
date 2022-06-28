@@ -33,6 +33,7 @@ import { CreatePostInput } from './inputs/create-post.input';
 import { PostTagInput } from './inputs/post-tag.input';
 import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
 import { UpdatePostInput } from './inputs/update-post.input';
+import { SearchDto } from '../common/dtos/search.dto';
 
 @Injectable()
 export class PostsService {
@@ -174,6 +175,44 @@ export class PostsService {
   }
 
   /**
+   * Publish Post
+   *
+   * Publishes a given user's post and makes it public.
+   */
+  public async publishPost(
+    userId: number,
+    postId: number,
+  ): Promise<PostEntity> {
+    const post = await this.authorsPostById(userId, postId);
+
+    if (post.published)
+      throw new BadRequestException('Post already published.');
+
+    post.published = true;
+    await this.commonService.saveEntity(this.postsRepository, post);
+    return post;
+  }
+
+  /**
+   * Unpublish Post
+   *
+   * Unpublishes a given user's post and makes it private.
+   */
+  public async unpublishPost(
+    userId: number,
+    postId: number,
+  ): Promise<PostEntity> {
+    const post = await this.authorsPostById(userId, postId);
+
+    if (!post.published)
+      throw new BadRequestException('Post already unpublished.');
+
+    post.published = false;
+    await this.commonService.saveEntity(this.postsRepository, post);
+    return post;
+  }
+
+  /**
    * Like Post
    *
    * The current user adds a like to a post.
@@ -251,7 +290,10 @@ export class PostsService {
    * Single Read CRUD action for Post.
    */
   public async postById(postId: number): Promise<PostEntity> {
-    const post = await this.postsRepository.findOne({ id: postId });
+    const post = await this.postsRepository.findOne({
+      id: postId,
+      published: true,
+    });
     this.commonService.checkExistence('Post', post);
     return post;
   }
@@ -262,7 +304,10 @@ export class PostsService {
    * Single Read CRUD action for Post.
    */
   public async postBySlug(slug: string): Promise<PostEntity> {
-    const post = await this.postsRepository.findOne({ slug: slug });
+    const post = await this.postsRepository.findOne({
+      slug: slug,
+      published: true,
+    });
     this.commonService.checkExistence('Post', post);
     return post;
   }
@@ -280,11 +325,13 @@ export class PostsService {
     first,
     after,
   }: ExtendedSearchDto): Promise<IPaginated<PostEntity>> {
-    const qb = this.postsRepository.createQueryBuilder(this.postAlias);
+    const qb = this.postsRepository
+      .createQueryBuilder(this.postAlias)
+      .where({ published: true });
 
     if (search) {
       search = this.commonService.formatSearch(search);
-      qb.where({
+      qb.andWhere({
         title: {
           $iLike: search,
         },
@@ -296,6 +343,43 @@ export class PostsService {
     }
 
     if (authorId) qb.andWhere({ author: authorId });
+
+    return this.commonService.queryBuilderPagination(
+      this.postAlias,
+      getQueryCursor(cursor),
+      first,
+      order,
+      qb,
+      after,
+      cursor === QueryCursorEnum.DATE,
+    );
+  }
+
+  /**
+   * Filter User's Posts
+   *
+   * Find posts of a given user.
+   */
+  public async filterUsersPosts(
+    userId: number,
+    { cursor, search, order, first, after }: SearchDto,
+  ): Promise<IPaginated<PostEntity>> {
+    const qb = this.postsRepository
+      .createQueryBuilder(this.postAlias)
+      .where({ author: userId });
+
+    if (search) {
+      search = this.commonService.formatSearch(search);
+      qb.andWhere({
+        title: {
+          $iLike: search,
+        },
+      }).andWhere({
+        content: {
+          $iLike: search,
+        },
+      });
+    }
 
     return this.commonService.queryBuilderPagination(
       this.postAlias,
@@ -331,6 +415,7 @@ export class PostsService {
       })
       .getKnexQuery();
     const qb = this.postsRepository.createQueryBuilder(this.postAlias).where({
+      published: true,
       id: {
         $in: idQuery,
       },

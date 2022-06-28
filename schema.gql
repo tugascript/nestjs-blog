@@ -257,6 +257,7 @@ type Query {
   postBySlug(slug: String!): Post!
   filterPost(search: String, cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, authorId: Int): PaginatedPosts!
   filterSeriesPosts(cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, seriesId: Int!): PaginatedPosts!
+  filterUsersPost(cursor: QueryCursor = DATE, order: QueryOrder = DESC, after: String, first: Int = 10, search: String): PaginatedPosts!
   postTags(postId: Int!): [Tag!]!
   postLikes(order: QueryOrder = DESC, after: String, first: Int = 10, postId: Int!): PaginatedUsers!
   findAllTags: [Tag!]!
@@ -290,6 +291,8 @@ type Mutation {
   updatePostPicture(input: UpdatePostPictureInput!): Post!
   addTagToPost(input: PostTagInput!): Post!
   removeTagFromPost(input: PostTagInput!): Post!
+  publishPost(postId: Int!): Post!
+  unpublishPost(postId: Int!): Post!
   likePost(postId: Int!): Post!
   unlikePost(postId: Int!): Post!
   deletePost(postId: Int!): Message!

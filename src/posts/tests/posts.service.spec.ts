@@ -212,6 +212,13 @@ describe('PostsService', () => {
       expect(postTagsLen).toBeGreaterThan(updatedTagsLen);
     });
 
+    it('Publish Post', async () => {
+      const post = await postsService.postById(postId);
+      const oldPublished = post.published;
+      const updatedPost = await postsService.publishPost(userId, postId);
+      expect(updatedPost.published).not.toStrictEqual(oldPublished);
+    });
+
     it('Like Post', async () => {
       const post = await postsService.postById(postId);
       expect(await post.likes.loadCount()).toBe(0);
@@ -265,6 +272,7 @@ describe('PostsService', () => {
             slug: commonService.generateSlug(title),
             content: faker.lorem.paragraphs(2),
             author: userId,
+            published: true,
           }),
         );
       }
@@ -402,6 +410,14 @@ describe('PostsService', () => {
       expect(filteredUsers2.previousCount).toBe(2);
       expect(filteredUsers2.pageInfo.hasNextPage).toBe(false);
       expect(filteredUsers2.pageInfo.hasPreviousPage).toBe(true);
+    });
+
+    it('Unpublish Post', async () => {
+      const post = await postsService.postById(postId);
+      expect(post.published).toBe(true);
+      await postsService.unpublishPost(userId, postId);
+      const post2 = await postsService.postById(postId);
+      expect(post2.published).toBe(false);
     });
 
     it('Delete Post', async () => {

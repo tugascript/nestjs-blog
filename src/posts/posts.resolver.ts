@@ -34,6 +34,7 @@ import { PostTagInput } from './inputs/post-tag.input';
 import { UpdatePostPictureInput } from './inputs/update-post-picture.input';
 import { UpdatePostInput } from './inputs/update-post.input';
 import { PostsService } from './posts.service';
+import { SearchDto } from '../common/dtos/search.dto';
 
 @Resolver(() => PostType)
 export class PostsResolver {
@@ -82,6 +83,24 @@ export class PostsResolver {
     @Args('input') input: PostTagInput,
   ): Promise<PostEntity> {
     return this.postsService.removeTagFromPost(user.id, input);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async publishPost(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: PostDto,
+  ): Promise<PostEntity> {
+    return this.postsService.publishPost(user.id, dto.postId);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Mutation(() => PostType)
+  public async unpublishPost(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: PostDto,
+  ): Promise<PostEntity> {
+    return this.postsService.unpublishPost(user.id, dto.postId);
   }
 
   @Mutation(() => PostType)
@@ -137,6 +156,15 @@ export class PostsResolver {
     @Args() dto: FilterSeriesPostDto,
   ): Promise<IPaginated<PostEntity>> {
     return this.postsService.filterSeriesPosts(dto);
+  }
+
+  @UseGuards(PublisherGuard)
+  @Query(() => PaginatedPostsType)
+  public async filterUsersPost(
+    @CurrentUser() user: IAccessPayload,
+    @Args() dto: SearchDto,
+  ): Promise<IPaginated<PostEntity>> {
+    return this.postsService.filterUsersPosts(user.id, dto);
   }
 
   @Public()
