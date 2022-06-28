@@ -40,7 +40,7 @@
     "@nestjs/platform-fastify": "^8.4.7",
     "@nestjs/throttler": "^2.0.1",
     "add": "^2.0.6",
-    "altair-fastify-plugin": "4.3.1",
+    "altair-fastify-plugin": "4.4.2",
     "bcrypt": "^5.0.1",
     "cache-manager": "^4.0.1",
     "class-transformer": "^0.5.1",
