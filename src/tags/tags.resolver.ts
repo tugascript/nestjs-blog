@@ -10,6 +10,7 @@ import { TagEntity } from './entities/tag.entity';
 import { TagType } from './gql-types/tag.type';
 import { UpdateTagInput } from './inputs/update-tag.input';
 import { TagsService } from './tags.service';
+import { LocalMessageType } from '../common/gql-types/message.type';
 
 @Resolver(() => TagType)
 export class TagsResolver {
@@ -34,11 +35,11 @@ export class TagsResolver {
   }
 
   @UseGuards(PublisherGuard)
-  @Mutation(() => TagType)
+  @Mutation(() => LocalMessageType)
   public async deleteTag(
     @CurrentUser() user: IAccessPayload,
     @Args() dto: TagDto,
-  ) {
+  ): Promise<LocalMessageType> {
     return this.tagsService.deleteTag(user.id, dto.tagId);
   }
 
