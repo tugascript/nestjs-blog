@@ -9,7 +9,7 @@ import {
   Min,
   ValidatePromise,
 } from 'class-validator';
-import { GraphQLUpload } from 'graphql-upload';
+import GraphQLUpload from 'graphql-upload/GraphQLUpload.js';
 import { NAME_REGEX } from '../../common/constants/regex';
 import { FileUploadDto } from '../../uploader/dtos/file-upload.dto';
 import { IPostInput } from '../interfaces/post-input.interface';
