@@ -3123,12 +3123,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/sharp@npm:^0.30.4":
-  version: 0.30.4
-  resolution: "@types/sharp@npm:0.30.4"
+"@types/sharp@npm:^0.31.0":
+  version: 0.31.1
+  resolution: "@types/sharp@npm:0.31.1"
   dependencies:
     "@types/node": "*"
-  checksum: 3ebeaf55aa5ed2826a5bb4f13982a64b35691b6f38c4fd9d536ee7aed4d7e6b39529ae290f19343c5d8334419d69e147a28c214ca61adaed35ebf3ceea7cdf17
+  checksum: 226871181fc88b5ef8a6bc32c1e14a3426cc45480ed49536c45bb5c166c089169b8fe3e5c57aea8c34cc40b08311a95d5582c1a2f540f4425eb66fea3d6e0489
   languageName: node
   linkType: hard
 
@@ -3958,7 +3958,7 @@ __metadata:
     "@types/jsonwebtoken": ^8.5.8
     "@types/node": ^18.0.6
     "@types/nodemailer": ^6.4.4
-    "@types/sharp": ^0.30.4
+    "@types/sharp": ^0.31.0
     "@types/supertest": ^2.0.12
     "@types/uuid": ^8.3.4
     "@typescript-eslint/eslint-plugin": ^5.30.7
@@ -3990,7 +3990,7 @@ __metadata:
     reflect-metadata: ^0.1.13
     rimraf: ^3.0.2
     rxjs: ^7.5.6
-    sharp: ^0.30.7
+    sharp: ^0.31.0
     slugify: ^1.6.5
     source-map-support: ^0.5.21
     supertest: ^6.2.4
@@ -9225,20 +9225,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.30.7":
-  version: 0.30.7
-  resolution: "sharp@npm:0.30.7"
+"sharp@npm:^0.31.0":
+  version: 0.31.3
+  resolution: "sharp@npm:0.31.3"
   dependencies:
     color: ^4.2.3
     detect-libc: ^2.0.1
     node-addon-api: ^5.0.0
     node-gyp: latest
     prebuild-install: ^7.1.1
-    semver: ^7.3.7
+    semver: ^7.3.8
     simple-get: ^4.0.1
     tar-fs: ^2.1.1
     tunnel-agent: ^0.6.0
-  checksum: bbc63ca3c7ea8a5bff32cd77022cfea30e25a03f5bd031e935924bf6cf0e11e3388e8b0e22b3137bf8816aa73407f1e4fbeb190f3a35605c27ffca9f32b91601
+  checksum: 29fd1dfbc616c6389f53f366cec342b4353d9f2a37e98952ca273db38dca57dfa0f336322d6d763f0fae876042ead22fd86ffe26d70c32ade2458d421db60d04
   languageName: node
   linkType: hard
 
