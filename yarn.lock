@@ -3004,12 +3004,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jsonwebtoken@npm:^8.5.8":
-  version: 8.5.8
-  resolution: "@types/jsonwebtoken@npm:8.5.8"
+"@types/jsonwebtoken@npm:^9.0.0":
+  version: 9.0.1
+  resolution: "@types/jsonwebtoken@npm:9.0.1"
   dependencies:
     "@types/node": "*"
-  checksum: 56738a918c543dba30786066959f801212e7fb5cd4ec53cf7b8d227711ed358834feb9e5141f7f88ec7c642bb39757330a5a8917e3b22e0ff9084940d35f0d70
+  checksum: a7f0925e9a42ad3ae970364c63c5986d40da5c83d51d3f4e624eb0f064a380376f9e3fb3f2f837390a9ab80143f5d75fd51866da30e110f6b486a3379e1c768f
   languageName: node
   linkType: hard
 
@@ -3945,7 +3945,7 @@ __metadata:
     "@types/cache-manager": ^4.0.1
     "@types/graphql-upload": ^15.0.0
     "@types/jest": 28.1.8
-    "@types/jsonwebtoken": ^8.5.8
+    "@types/jsonwebtoken": ^9.0.0
     "@types/node": ^18.0.6
     "@types/nodemailer": ^6.4.4
     "@types/sharp": ^0.31.0
