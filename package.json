@@ -53,7 +53,7 @@
     "joi": "^17.6.0",
     "jsonwebtoken": "^9.0.0",
     "mercurius": "^11.0.0",
-    "mercurius-cache": "^2.0.0",
+    "mercurius-cache": "^3.0.0",
     "mercurius-upload": "^5.0.0",
     "mqemitter-redis": "^5.0.0",
     "nestjs-throttler-storage-redis": "^0.1.20",
