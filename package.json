@@ -52,7 +52,7 @@
     "ioredis": "^5.2.1",
     "joi": "^17.6.0",
     "jsonwebtoken": "^9.0.0",
-    "mercurius": "^10.1.0",
+    "mercurius": "^11.0.0",
     "mercurius-cache": "^2.0.0",
     "mercurius-upload": "^5.0.0",
     "mqemitter-redis": "^5.0.0",

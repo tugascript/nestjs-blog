@@ -1670,13 +1670,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/websocket@npm:^6.0.0":
-  version: 6.0.1
-  resolution: "@fastify/websocket@npm:6.0.1"
+"@fastify/websocket@npm:^7.0.0":
+  version: 7.1.2
+  resolution: "@fastify/websocket@npm:7.1.2"
   dependencies:
-    fastify-plugin: ^3.0.0
+    fastify-plugin: ^4.0.0
     ws: ^8.0.0
-  checksum: db8855b21d0893820a4fbc1eb3586cb95a2a079f729a62bdeb440e477ec6b9d2c376a38bdd45d574ebec5df64775f02a4f91f864a3a99cdc518c25597bb28849
+  checksum: 008f1a6a82b0dc2bf73ace3edcfb9a0b0999e945f60dfeb272e6b68b309018886dd5e13e819d5fe97c7a1d8a7a1ba3ddfe43a0615fa142b95e6caac0f0ef7a9e
   languageName: node
   linkType: hard
 
@@ -2129,6 +2129,19 @@ __metadata:
   bin:
     node-pre-gyp: bin/node-pre-gyp
   checksum: 1b9c4c87a68d200daa13151d0fe033aa7aa8f7b26f3585255424dd8dfee2ec672c3e9bea4071c624469bc0aebbbcde08f8a300c8a958db52c50abadd5fb56920
+  languageName: node
+  linkType: hard
+
+"@mercuriusjs/subscription-client@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "@mercuriusjs/subscription-client@npm:0.1.0"
+  dependencies:
+    "@fastify/error": ^3.0.0
+    secure-json-parse: ^2.4.0
+    ws: ^8.2.2
+  peerDependencies:
+    graphql: ^16.0.0
+  checksum: 44392e13958a3124959d169c03bca5fab77b296d3006f4835c32579844097f9388b562aad68673633ab4980e84a38adb855622f2de81ac4af781fa58867dab9d
   languageName: node
   linkType: hard
 
@@ -3967,7 +3980,7 @@ __metadata:
     jest: ^28.1.3
     joi: ^17.6.0
     jsonwebtoken: ^9.0.0
-    mercurius: ^10.1.0
+    mercurius: ^11.0.0
     mercurius-cache: ^2.0.0
     mercurius-upload: ^5.0.0
     mqemitter-redis: ^5.0.0
@@ -5303,13 +5316,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"events.on@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "events.on@npm:1.0.1"
-  checksum: bf9d1c1c30fdb87dc1eed8eabe8b3ee98bd3d411ce0c37a4e9da8fcf6805a78829a4bb26b5c882861cbde397e8672c8cb08ee3db3b1f03a6c4b2f690d274eeae
-  languageName: node
-  linkType: hard
-
 "events@npm:^3.2.0":
   version: 3.3.0
   resolution: "events@npm:3.3.0"
@@ -5504,6 +5510,13 @@ __metadata:
   version: 4.0.0
   resolution: "fastify-plugin@npm:4.0.0"
   checksum: b929f94e70e3815643842cd50bdfecd26ca2c34ef7a31b1570bd3fe7437174858e9bc4dfa70c2984340d5450c24b830d37fe4789c103ef80565dcc9037ae987a
+  languageName: node
+  linkType: hard
+
+"fastify-plugin@npm:^4.2.0":
+  version: 4.5.0
+  resolution: "fastify-plugin@npm:4.5.0"
+  checksum: 3cc36a43ec72ee9974d3cd1989027e77b277b0994e4fc02ed4e6492aabd83a0be66f14fdec56e60d9a41911ea1ff1ea70c9d957a87e46bcdb8fedd859f4988fe
   languageName: node
   linkType: hard
 
@@ -7590,15 +7603,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mercurius@npm:^10.1.0":
-  version: 10.1.0
-  resolution: "mercurius@npm:10.1.0"
+"mercurius@npm:^11.0.0":
+  version: 11.5.0
+  resolution: "mercurius@npm:11.5.0"
   dependencies:
     "@fastify/error": ^3.0.0
     "@fastify/static": ^6.0.0
-    "@fastify/websocket": ^6.0.0
-    events.on: ^1.0.1
-    fastify-plugin: ^3.0.1
+    "@fastify/websocket": ^7.0.0
+    "@mercuriusjs/subscription-client": ^0.1.0
+    fastify-plugin: ^4.2.0
     graphql: ^16.0.0
     graphql-jit: ^0.7.3
     mqemitter: ^5.0.0
@@ -7612,7 +7625,7 @@ __metadata:
     ws: ^8.2.2
   peerDependencies:
     graphql: ^16.0.0
-  checksum: cbe325551889b483aedd4b2323aa9a2d121c53ba65ffeebc736a8cb1c5b44ec14f9ff37199904a1c480e0d9519b8efafbaa7a1b15e64ed9c8cb91d8ad0cbaea5
+  checksum: 061ff75d709fe010c3a372c68c783684047d45b50ff4f3776a79fd2612b76324d6f52772364261fb1624c68ff61713eac7ffa87b369ed21f93c7a0d9c8bc1f3a
   languageName: node
   linkType: hard
 
