@@ -1573,14 +1573,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/cookie@npm:^7.3.0":
-  version: 7.3.0
-  resolution: "@fastify/cookie@npm:7.3.0"
+"@fastify/cookie@npm:^8.0.0":
+  version: 8.3.0
+  resolution: "@fastify/cookie@npm:8.3.0"
   dependencies:
     cookie: ^0.5.0
-    cookie-signature: ^1.1.0
     fastify-plugin: ^4.0.0
-  checksum: 468e3190699254ea5a070b963ed9fee1be1b711b5434e0e9ab0d402cec377276a1ca834efb092c194fd9ab7551495ea2e7de7848a249bfea52739685c13b381c
+  checksum: d5dfb5c85d4ae02188aad63c8cf055d3b904287bc2750964ee0b8589c5b5ae32850e8fc9456a8830e9f4e9f24d5059e54dac084835d6ef4cbba7fa4b9c4673b3
   languageName: node
   linkType: hard
 
@@ -3932,7 +3931,7 @@ __metadata:
     "@aws-sdk/client-s3": ^3.135.0
     "@aws-sdk/signature-v4-crt": ^3.130.0
     "@faker-js/faker": ^7.3.0
-    "@fastify/cookie": ^7.3.0
+    "@fastify/cookie": ^8.0.0
     "@fastify/cors": ^8.0.0
     "@fastify/csrf-protection": ^5.1.0
     "@fastify/static": ^6.4.0
@@ -4654,13 +4653,6 @@ __metadata:
   dependencies:
     safe-buffer: ~5.1.1
   checksum: 985d974a2d33e1a2543ada51c93e1ba2f73eaed608dc39f229afc78f71dcc4c8b7d7c684aa647e3c6a3a204027444d69e53e169ce94e8d1fa8d7dee80c9c8fed
-  languageName: node
-  linkType: hard
-
-"cookie-signature@npm:^1.1.0":
-  version: 1.2.0
-  resolution: "cookie-signature@npm:1.2.0"
-  checksum: d11f56f909733695d989511bf0e1dd874220d818b9d118945dce3c275fa50adfb3f6984354de0f5eefdc9347951a22ba3545230a762576019d23c16055b12d4c
   languageName: node
   linkType: hard
 
