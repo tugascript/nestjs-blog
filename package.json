@@ -27,7 +27,7 @@
     "@aws-sdk/signature-v4-crt": "^3.130.0",
     "@fastify/cookie": "^8.0.0",
     "@fastify/cors": "^8.0.0",
-    "@fastify/csrf-protection": "^5.1.0",
+    "@fastify/csrf-protection": "^6.0.0",
     "@fastify/static": "^6.4.0",
     "@mikro-orm/core": "^5.2.3",
     "@mikro-orm/nestjs": "^5.1.0",

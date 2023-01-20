@@ -1593,21 +1593,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/csrf-protection@npm:^5.1.0":
-  version: 5.1.0
-  resolution: "@fastify/csrf-protection@npm:5.1.0"
+"@fastify/csrf-protection@npm:^6.0.0":
+  version: 6.1.0
+  resolution: "@fastify/csrf-protection@npm:6.1.0"
   dependencies:
-    "@fastify/csrf": ^5.1.0
+    "@fastify/csrf": ^6.0.0
     "@fastify/error": ^3.0.0
-    fastify-plugin: ^3.0.0
-  checksum: 322b2bba48d8f30599321c43bca018987401acdcbc7d82429161541e7cae7941cdf47296d4df6628b7d6e0e28321595e1ad04083c85b4b9b0d91a65e7429031f
+    fastify-plugin: ^4.0.0
+  checksum: 0bae5cf183f94ec827202bb876df4b702c86b6ea5bbb305c349c63dc9bf23dc0d2166be3c13015c57cf2b1fe58c0335a9772cd0ba8cff5534dfe13cec3897eab
   languageName: node
   linkType: hard
 
-"@fastify/csrf@npm:^5.1.0":
-  version: 5.1.0
-  resolution: "@fastify/csrf@npm:5.1.0"
-  checksum: f835b53423493726a5d0d906e1bca472bf752c2cba3ca81c8120cd5f8973de53e952c72432154c8f37830a852142d213cc0e44ecbd165f9f9d5d5f718a520e91
+"@fastify/csrf@npm:^6.0.0":
+  version: 6.1.0
+  resolution: "@fastify/csrf@npm:6.1.0"
+  checksum: edad4d878b1988ee8f332b1135d67b02bf76d9cd120b0345c3b8d6ce11bf08b756a98908ca2ea4d67036eaa466cd059e51f96a274865df5c74467364fc11be12
   languageName: node
   linkType: hard
 
@@ -3933,7 +3933,7 @@ __metadata:
     "@faker-js/faker": ^7.3.0
     "@fastify/cookie": ^8.0.0
     "@fastify/cors": ^8.0.0
-    "@fastify/csrf-protection": ^5.1.0
+    "@fastify/csrf-protection": ^6.0.0
     "@fastify/static": ^6.4.0
     "@mikro-orm/cli": ^5.2.3
     "@mikro-orm/core": ^5.2.3
