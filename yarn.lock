@@ -3620,23 +3620,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"altair-fastify-plugin@npm:4.5.3":
-  version: 4.5.3
-  resolution: "altair-fastify-plugin@npm:4.5.3"
+"altair-fastify-plugin@npm:4.6.4":
+  version: 4.6.4
+  resolution: "altair-fastify-plugin@npm:4.6.4"
   dependencies:
     "@fastify/static": ^6.4.0
-    altair-static: ^4.5.3
+    altair-static: ^4.6.4
     fastify-plugin: ^2.3.4
   peerDependencies:
     fastify: ^4.0.3
-  checksum: 5872c1689f33ac8d060a5cc00c00e2164dd0cc34fe578908bc7180cc9de4ec80ee6d61f55c55619a31215a16e8ab11b27e708d517d4429257b5488d3766d038f
+  checksum: c65e80c2c882f3d67b13ceed75a521348533de62534872bb91063f726ee50f79ec4fd52e454e22c2ba3d5dac2f88f347ccb74e0421543681fc4f60cda81ac1eb
   languageName: node
   linkType: hard
 
-"altair-static@npm:^4.5.3":
-  version: 4.5.3
-  resolution: "altair-static@npm:4.5.3"
-  checksum: ecce89a436a63df6805786c927d9e38179595d4dc1665f7be0448d15bace96ea86107730d0078836e2335ed841b04d970d885f281c8eae53d5d8d8d94841434e
+"altair-static@npm:^4.6.4":
+  version: 4.6.4
+  resolution: "altair-static@npm:4.6.4"
+  checksum: 22983c353c55f0c2026905f4e0658da1d84d60e5777fc0be83f70a9fe560e6fe4bdd4ff0d60ff0f8b20b10cdc0f3f478a0876d4140eabe7fef6060e0dc412ebb
   languageName: node
   linkType: hard
 
@@ -3964,7 +3964,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^5.30.7
     "@typescript-eslint/parser": ^5.30.7
     add: ^2.0.6
-    altair-fastify-plugin: 4.5.3
+    altair-fastify-plugin: 4.6.4
     bcrypt: ^5.0.1
     cache-manager: ^4.1.0
     class-transformer: ^0.5.1
