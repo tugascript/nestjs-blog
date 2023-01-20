@@ -42,7 +42,7 @@
     "add": "^2.0.6",
     "altair-fastify-plugin": "4.6.4",
     "bcrypt": "^5.0.1",
-    "cache-manager": "^4.1.0",
+    "cache-manager": "^5.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "dayjs": "^1.11.4",
