@@ -2921,15 +2921,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/fs-capacitor@npm:*":
-  version: 2.0.0
-  resolution: "@types/fs-capacitor@npm:2.0.0"
-  dependencies:
-    "@types/node": "*"
-  checksum: 367079834ddb8984e9b740d4219d01cfa9683e8552b1dfda473817e7f2b33d750453adda148d1b99cb67bd6e990fad8bd31e4034b5e9311dfb9803e6f1fbb0dc
-  languageName: node
-  linkType: hard
-
 "@types/graceful-fs@npm:^4.1.3":
   version: 4.1.5
   resolution: "@types/graceful-fs@npm:4.1.5"
@@ -2939,15 +2930,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/graphql-upload@npm:^8.0.11":
-  version: 8.0.11
-  resolution: "@types/graphql-upload@npm:8.0.11"
+"@types/graphql-upload@npm:^15.0.0":
+  version: 15.0.2
+  resolution: "@types/graphql-upload@npm:15.0.2"
   dependencies:
     "@types/express": "*"
-    "@types/fs-capacitor": "*"
     "@types/koa": "*"
+    fs-capacitor: ^8.0.0
     graphql: 0.13.1 - 16
-  checksum: 8af6c023ed8c9118950a6695ddc682781f4de8619e7c5bc49f3a2e0b0a25f04c55a53ecc9879de264665ed19409293ce65a2384ab14eb4c77b69756e37a02eaa
+  checksum: 3e88a03082ce1e1de39b414a096fbd47cf1f97b6027c93cc71a216229bdfb248f54f1afc209e970e1ae3856153c20cf40d458febe348b287be237f62ea84ffc0
   languageName: node
   linkType: hard
 
@@ -3953,7 +3944,7 @@ __metadata:
     "@nestjs/throttler": ^3.0.0
     "@types/bcrypt": ^5.0.0
     "@types/cache-manager": ^4.0.1
-    "@types/graphql-upload": ^8.0.11
+    "@types/graphql-upload": ^15.0.0
     "@types/jest": 28.1.8
     "@types/jsonwebtoken": ^8.5.8
     "@types/node": ^18.0.6
@@ -5740,6 +5731,13 @@ __metadata:
   version: 6.2.0
   resolution: "fs-capacitor@npm:6.2.0"
   checksum: acdbeb92eedb1d7094f623e7be518c4d73075cb45ea97cc80ae23fc31adb066853723be824caf3e3c8f40944548c8cdc9bf0f0735eabb9413e734fe045b303b1
+  languageName: node
+  linkType: hard
+
+"fs-capacitor@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "fs-capacitor@npm:8.0.0"
+  checksum: 531c8c4ac12fe3a75f9564cb3ce41571f148ec81cf111fed04f6921a5a2de1eadacf44497c223dd281243472fe6ccc98005f34674e8e471d6370b7437860f774
   languageName: node
   linkType: hard
 
