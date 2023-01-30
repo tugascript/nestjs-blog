@@ -2131,19 +2131,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mercuriusjs/subscription-client@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "@mercuriusjs/subscription-client@npm:0.1.0"
-  dependencies:
-    "@fastify/error": ^3.0.0
-    secure-json-parse: ^2.4.0
-    ws: ^8.2.2
-  peerDependencies:
-    graphql: ^16.0.0
-  checksum: 44392e13958a3124959d169c03bca5fab77b296d3006f4835c32579844097f9388b562aad68673633ab4980e84a38adb855622f2de81ac4af781fa58867dab9d
-  languageName: node
-  linkType: hard
-
 "@mikro-orm/cli@npm:^5.2.3":
   version: 5.2.3
   resolution: "@mikro-orm/cli@npm:5.2.3"
@@ -3963,7 +3950,7 @@ __metadata:
     jest: ^28.1.3
     joi: ^17.6.0
     jsonwebtoken: ^9.0.0
-    mercurius: ^11.0.0
+    mercurius: ^12.0.0
     mercurius-cache: ^3.0.0
     mercurius-upload: ^5.0.0
     mqemitter-redis: ^5.0.0
@@ -7592,14 +7579,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mercurius@npm:^11.0.0":
-  version: 11.5.0
-  resolution: "mercurius@npm:11.5.0"
+"mercurius@npm:^12.0.0":
+  version: 12.0.0
+  resolution: "mercurius@npm:12.0.0"
   dependencies:
     "@fastify/error": ^3.0.0
     "@fastify/static": ^6.0.0
     "@fastify/websocket": ^7.0.0
-    "@mercuriusjs/subscription-client": ^0.1.0
     fastify-plugin: ^4.2.0
     graphql: ^16.0.0
     graphql-jit: ^0.7.3
@@ -7607,14 +7593,14 @@ __metadata:
     p-map: ^4.0.0
     readable-stream: ^4.0.0
     safe-stable-stringify: ^2.3.0
-    secure-json-parse: ^2.4.0
+    secure-json-parse: ^2.7.0
     single-user-cache: ^0.6.0
-    tiny-lru: ^8.0.1
+    tiny-lru: ^10.0.0
     undici: ^5.0.0
     ws: ^8.2.2
   peerDependencies:
     graphql: ^16.0.0
-  checksum: 061ff75d709fe010c3a372c68c783684047d45b50ff4f3776a79fd2612b76324d6f52772364261fb1624c68ff61713eac7ffa87b369ed21f93c7a0d9c8bc1f3a
+  checksum: 6121698843271481f2d65221b6fcdb2161257ebb01234050ec8bbe1552e9c12ee90770fac83a2350945f70b9fbb91ab8fa0210f7131db3c3f4481973f68e3bd6
   languageName: node
   linkType: hard
 
@@ -9141,6 +9127,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"secure-json-parse@npm:^2.7.0":
+  version: 2.7.0
+  resolution: "secure-json-parse@npm:2.7.0"
+  checksum: d9d7d5a01fc6db6115744ba23cf9e67ecfe8c524d771537c062ee05ad5c11b64c730bc58c7f33f60bd6877f96b86f0ceb9ea29644e4040cb757f6912d4dd6737
+  languageName: node
+  linkType: hard
+
 "semver@npm:7.x, semver@npm:^7.3.2, semver@npm:^7.3.4, semver@npm:^7.3.5, semver@npm:^7.3.7":
   version: 7.3.7
   resolution: "semver@npm:7.3.7"
@@ -9893,7 +9886,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tiny-lru@npm:^8.0.1, tiny-lru@npm:^8.0.2":
+"tiny-lru@npm:^10.0.0":
+  version: 10.0.1
+  resolution: "tiny-lru@npm:10.0.1"
+  checksum: 58b5f17a357625335aa3b90ee8c9b3e9abede5c1f46066c73deb129574a205efb112807d6d473909e73f1d874ea99bf14eb5c88223d540eb32ebb5e1ff146689
+  languageName: node
+  linkType: hard
+
+"tiny-lru@npm:^8.0.2":
   version: 8.0.2
   resolution: "tiny-lru@npm:8.0.2"
   checksum: ec4d884914626760eef05cd57850f21a153adeeb7c4242eb8d44a031f1bd8489f18c1bf5d6f10f0a11c5dcfe03b302f26b00f2b879b38853599486bf0dca8c97
