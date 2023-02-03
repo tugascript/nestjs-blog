@@ -3971,7 +3971,7 @@ __metadata:
     joi: ^17.6.0
     jsonwebtoken: ^9.0.0
     mercurius: ^12.0.0
-    mercurius-cache: ^3.0.0
+    mercurius-cache: ^4.0.0
     mercurius-upload: ^6.0.0
     mqemitter-redis: ^5.0.0
     nestjs-throttler-storage-redis: ^0.3.0
@@ -7597,13 +7597,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mercurius-cache@npm:^3.0.0":
-  version: 3.0.3
-  resolution: "mercurius-cache@npm:3.0.3"
+"mercurius-cache@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "mercurius-cache@npm:4.0.0"
   dependencies:
     async-cache-dedupe: ^1.8.0
     fastify-plugin: ^4.5.0
-  checksum: e2ab58e4ac8be51796de70d2a28ba52ebf02e1afcb0029d56c8cd5b84847ed41b6f3c141052c0a18f1211d0d016ad0cb30d9a445e1fb676023525e474622ca54
+  checksum: ebf0ab034c242d12a690ef10db14e794581ff6e4d447a2dd4b364ce7a8a8ecffac57adf03e08efbec3395add98822db918efeb225e6132dd9345c58669b609fa
   languageName: node
   linkType: hard
 
