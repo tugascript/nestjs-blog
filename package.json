@@ -36,7 +36,7 @@
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.5",
     "@nestjs/graphql": "^10.0.21",
-    "@nestjs/mercurius": "^10.0.21",
+    "@nestjs/mercurius": "^11.0.0",
     "@nestjs/platform-fastify": "^9.0.5",
     "@nestjs/throttler": "^4.0.0",
     "add": "^2.0.6",
