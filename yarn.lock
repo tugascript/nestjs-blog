@@ -2278,20 +2278,13 @@ __metadata:
   linkType: hard
 
 "@mikro-orm/nestjs@npm:^5.1.0":
-  version: 5.1.0
-  resolution: "@mikro-orm/nestjs@npm:5.1.0"
+  version: 5.1.7
+  resolution: "@mikro-orm/nestjs@npm:5.1.7"
   peerDependencies:
-    "@mikro-orm/core": ^5.0.0
-    "@mikro-orm/knex": ^5.0.0
-    "@mikro-orm/mongodb": ^5.0.0
+    "@mikro-orm/core": ^5.0.0 || ^6.0.0-dev.0
     "@nestjs/common": ^8.0.0 || ^9.0.0
     "@nestjs/core": ^8.0.0 || ^9.0.0
-  peerDependenciesMeta:
-    "@mikro-orm/knex":
-      optional: true
-    "@mikro-orm/mongodb":
-      optional: true
-  checksum: 1ed99fd245a97293e6b66598d00b0a5602bcf6f6adacce4f64e50e4b5435bdc35a11dc189733514fa9d955880d6bfe1b7d871e07939ca3fe5a721b73193f43fa
+  checksum: 34dfb268d1477f543a6387e4b4ab574faa2dd14ec14d953f70b59f9351c30c1ccb7770eef1fb7c1124bc95b2e5644ff7fddac611168bd890983a76d73a70a26b
   languageName: node
   linkType: hard
 
