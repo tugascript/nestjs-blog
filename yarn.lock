@@ -4203,12 +4203,12 @@ __metadata:
   linkType: hard
 
 "cache-manager@npm:^5.0.0":
-  version: 5.1.4
-  resolution: "cache-manager@npm:5.1.4"
+  version: 5.1.7
+  resolution: "cache-manager@npm:5.1.7"
   dependencies:
     lodash.clonedeep: ^4.5.0
-    lru-cache: ^7.14.0
-  checksum: 4f2d6a0bee6e198976ffc73947c9bceaf68ea1c0f1c361e1264c4158cd80ec45c991a1359d1848a52bb95faaad20c0b244cf002f2fd4d3e1485dbfb8d303c5b8
+    lru-cache: ^7.17.0
+  checksum: 550b04185b385de842953feee1fb5bad117f291264f3eaae55c7d00dcb15e2be658a883c031627f62d4ec88533c997b8ab3b845713809d1a9a512822dc4e35f5
   languageName: node
   linkType: hard
 
@@ -7474,10 +7474,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:^7.14.0":
-  version: 7.14.1
-  resolution: "lru-cache@npm:7.14.1"
-  checksum: d72c6713c6a6d86836a7a6523b3f1ac6764768cca47ec99341c3e76db06aacd4764620e5e2cda719a36848785a52a70e531822dc2b33fb071fa709683746c104
+"lru-cache@npm:^7.17.0":
+  version: 7.18.3
+  resolution: "lru-cache@npm:7.18.3"
+  checksum: e550d772384709deea3f141af34b6d4fa392e2e418c1498c078de0ee63670f1f46f5eee746e8ef7e69e1c895af0d4224e62ee33e66a543a14763b0f2e74c1356
   languageName: node
   linkType: hard
 
