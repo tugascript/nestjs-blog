@@ -2829,9 +2829,9 @@ __metadata:
   linkType: hard
 
 "@types/cache-manager@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "@types/cache-manager@npm:4.0.1"
-  checksum: 1249232472b615916001ed3df4f97b25f0d6b82b37c5f64149c8589bc03ef123edfa44c7992ef58449b1f9754e6ca2ce5a008381fd7149988cbfe9dfcd881ad1
+  version: 4.0.2
+  resolution: "@types/cache-manager@npm:4.0.2"
+  checksum: 272828c49635849313a6355f525a047dca70346d2dfeb7a085734532a9b410df0a2091699d033ef002d61160c7f344d0403aeeb908528e1ece031bd2cbdd4982
   languageName: node
   linkType: hard
 
